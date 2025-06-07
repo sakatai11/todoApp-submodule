@@ -1,7 +1,7 @@
 // mocks/data/index.ts
-import { lists } from '@/mocks/data/lists';
-import { todos } from '@/mocks/data/todos';
-import { mockUser } from '@/mocks/data/user';
+import { lists } from './lists';
+import { todos } from './todos';
+import { mockUser } from './user';
 
 //dashboard data
 export const contents = {

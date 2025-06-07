@@ -2,13 +2,33 @@
 
 ## 概要
 
-todoApp-nextプロジェクトでは、ローカル開発環境でAPIモックを使用するためにMSW（Mock Service Worker）を導入しています。これにより、Firebaseバックエンドに接続せずにアプリケーションの開発・テストが可能になります。
+ローカル開発環境でAPIモックを使用するためにMSW（Mock Service Worker）を導入しています。これにより、Firebaseバックエンドに接続せずにアプリケーションの開発・テストが可能になります。
+
+## 主要機能
+
+### 1. モックデータ管理
+
+- **ユーザーデータ**: テスト用ユーザー情報
+- **Todoデータ**: サンプルTodo項目
+- **リストデータ**: Todoカテゴリとステータス
+
+### 2. API モッキング
+
+- **認証API**: ログイン・サインアップ・ログアウト
+- **Todo API**: CRUD操作（作成・読取・更新・削除）
+- **リストAPI**: カテゴリ管理
+- **ダッシュボードAPI**: 統計データ取得
+
+### 3. 環境対応
+
+- **開発環境**: モックAPIを使用した高速開発
+- **本番環境**: 実際のAPIへの自動切り替え
 
 ## セットアップ手順
 
 ### 1. Service Workerの初期化
 
-プロジェクトルートで以下のコマンドを実行してください：
+メインプロジェクトルート（todoApp-next）で以下のコマンドを実行してください：
 
 ```bash
 npm run msw:init
@@ -32,26 +52,6 @@ NEXT_PUBLIC_API_MOCKING=enabled
 
 ```bash
 npm run dev
-```
-
-## ファイル構造
-
-```
-mocks/
-├── browser.ts          # ブラウザ用MSW設定
-├── server.ts           # サーバーサイド用MSW設定
-├── initMocks.ts        # MSW初期化ロジック
-├── data/               # モックデータ
-│   ├── index.ts
-│   ├── todos.ts        # Todoのモックデータ
-│   ├── lists.ts        # リストのモックデータ
-│   └── user.ts         # ユーザーのモックデータ
-└── handlers/           # APIハンドラー
-    ├── index.ts
-    ├── todos.ts        # Todo API (/api/todos)
-    ├── auth.ts         # 認証 API (/api/auth/*, /api/user)
-    ├── dashboard.ts    # ダッシュボード API (/api/dashboards)
-    └── lists.ts        # リスト API (/api/lists)
 ```
 
 ## 使用方法
@@ -86,7 +86,29 @@ const mockTodos: TodoListProps[] = [
 
 ### APIハンドラーの追加
 
-新しいAPIエンドポイントを追加する場合は、`mocks/handlers/`に新しいハンドラーを作成し、`index.ts`に追加します。
+新しいAPIエンドポイントを追加する場合は、`handlers/`に新しいハンドラーを作成し、`handlers/index.ts`に追加します。
+
+### インポート方法
+
+```typescript
+// ユーザーデータを使用
+import { user } from '@/todoApp-submodule/mocks/data';
+
+// MSW初期化
+import { initMocks } from '@/todoApp-submodule/mocks/initMocks';
+```
+
+## メインプロジェクトでの使用
+
+### 自動初期化
+
+MSWProviderが自動的にモック機能を初期化します：
+
+```typescript
+// app/providers/MSWProvider.tsx で自動実行
+const { initMocks } = await import('@/todoApp-submodule/mocks/initMocks');
+await initMocks();
+```
 
 ## 注意事項
 
@@ -107,6 +129,35 @@ const mockTodos: TodoListProps[] = [
 - ブラウザのキャッシュをクリアしてページをリロード
 - Service Workerを手動で削除してから再度実行
 
+## 最新化・保守
+
+### データの定期更新
+
+- 本番APIの仕様変更に合わせてモックデータを更新
+- 新機能追加時は対応するモックハンドラーを追加
+
 ## 本番APIとの切り替え
 
 `.env.local`の`NEXT_PUBLIC_API_MOCKING`を`disabled`に設定するか削除することで、本番のFirebase APIを使用するように切り替えられます。
+
+## 関連ドキュメント
+
+- [MSW公式ドキュメント](https://mswjs.io/)
+- [メインプロジェクトのREADME](../README.md)
+- [API仕様書](../docs/api/)
+
+## 更新方法
+
+### サブモジュール更新の流れ
+
+1. サブモジュール内で変更を実施
+2. サブモジュールにコミット・プッシュ
+3. メインプロジェクトでサブモジュール参照を更新
+
+```bash
+# メインプロジェクトで参照更新
+cd ..
+git add todoApp-submodule
+git commit -m "Update submodule reference"
+git push origin develop
+```

@@ -117,21 +117,7 @@ todoApp-next/
 │   ├── validatedData.ts        # バリデーション済みデータ
 │   └── links/                  # 外部リンク定義
 ├── public/                     # 静的アセット、画像関連
-├── mocks/                      # Mock Service Worker用のモックデータとハンドラー
-│   ├── browser.ts              # ブラウザ用MSW設定
-│   ├── server.ts               # Node.js用MSW設定
-│   ├── initMocks.ts            # モック初期化
-│   ├── data/                   # モックデータ定義
-│   │   ├── index.ts            # データエクスポート
-│   │   ├── lists.ts            # リストモックデータ
-│   │   ├── todos.ts            # タスクモックデータ
-│   │   └── user.ts             # ユーザーモックデータ
-│   └── handlers/               # APIハンドラー定義
-│       ├── index.ts            # ハンドラーエクスポート
-│       ├── auth.ts             # 認証APIハンドラー
-│       ├── dashboard.ts        # ダッシュボードAPIハンドラー
-│       ├── lists.ts            # リストAPIハンドラー
-│       └── todos.ts            # タスクAPIハンドラー
+├── todoApp-submodule/          # モックデータとドキュメント
 └── types/                      # TypeScript型定義
     ├── common.ts               # 共通型定義
     ├── components.ts           # コンポーネント型定義
