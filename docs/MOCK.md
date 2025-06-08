@@ -24,6 +24,29 @@
 - **開発環境**: モックAPIを使用した高速開発
 - **本番環境**: 実際のAPIへの自動切り替え
 
+## ファイル詳細説明
+
+### Core Files (mocks/)
+
+- **`browser.ts`**: クライアントサイドでのMSW Service Worker設定
+- **`server.ts`**: サーバーサイド（SSR/API Routes）でのMSWサーバー設定
+- **`initMocks.ts`**: 実行環境を自動判定してMSWを初期化する統一関数
+
+### Data Layer (mocks/data/)
+
+- **`index.ts`**: 全モックデータを統合し、外部から使いやすい形でエクスポート
+- **`lists.ts`**: Todoのカテゴリ分類とステータス管理用データ
+- **`todos.ts`**: 開発・テスト用のサンプルTodo項目データ
+- **`user.ts`**: 認証テスト用のユーザーアカウント情報
+
+### API Layer (mocks/handlers/)
+
+- **`index.ts`**: 全APIハンドラーを統合し、MSWで使用する形で整理
+- **`auth.ts`**: ユーザー認証フローのモック（JWT生成、セッション管理）
+- **`dashboard.ts`**: 統計情報やアナリティクス用のモックAPI
+- **`lists.ts`**: Todoカテゴリの作成・編集・削除・並び替えAPI
+- **`todos.ts`**: Todo項目の作成・更新・削除・ステータス変更API
+
 ## セットアップ手順
 
 ### 1. Service Workerの初期化
