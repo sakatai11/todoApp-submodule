@@ -56,6 +56,7 @@ initialTodos: TodoListProps[]
 
 - `/api/todos` エンドポイントとの連携
 - POST（追加）、PUT（更新、切り替え）、DELETE（削除）
+- 型安全なAPI呼び出し：`apiRequest<TodoPayload<Method>, TodoResponse<Method>>`
 
 ## 6. エラー管理
 

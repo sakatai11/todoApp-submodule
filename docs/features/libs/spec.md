@@ -22,23 +22,29 @@ features/libs/
 
 **シグネチャ**:
 ```typescript
-export const apiRequest = async <T>(
+export const apiRequest = async <TRequest, TResponse = TRequest>(
   url: string,
   method: 'POST' | 'PUT' | 'DELETE',
-  body?: T,
-): Promise<T>
+  body?: TRequest,
+): Promise<TResponse>
 ```
+
+#### 型パラメータ
+| 型パラメータ | 説明 | デフォルト |
+|-------------|------|----------|
+| `TRequest` | リクエストボディの型 | - |
+| `TResponse` | レスポンスデータの型 | `TRequest` |
 
 #### パラメータ
 | パラメータ | 型 | 必須 | 説明 |
 |-----------|----|----|-----|
 | `url` | `string` | ✓ | リクエスト先のエンドポイントURL |
 | `method` | `'POST' \| 'PUT' \| 'DELETE'` | ✓ | HTTPメソッド |
-| `body` | `T` | - | リクエストボディ（JSON形式） |
+| `body` | `TRequest` | - | リクエストボディ（JSON形式） |
 
 #### 戻り値
-- `Promise<T>`: レスポンスのJSONデータ
-- ジェネリック型`T`により、型安全性を保証
+- `Promise<TResponse>`: レスポンスのJSONデータ
+- ジェネリック型`TRequest`と`TResponse`により、リクエストとレスポンスの型安全性を個別に保証
 
 #### 機能・特徴
 
@@ -62,31 +68,59 @@ export const apiRequest = async <T>(
 - 呼び出し元へのエラー再throw
 
 **5. TypeScript対応**
-- ジェネリック型による型安全性
+- 2つのジェネリック型による型安全性
+- リクエスト型（`TRequest`）とレスポンス型（`TResponse`）の個別指定
 - 入力・出力の型推論
 
 #### 使用例
 
+**基本的な使用例**:
 ```typescript
-// Todo作成
-const newTodo = await apiRequest<TodoType>(
+// Todo作成（リクエストとレスポンスが同じ型）
+const newTodo = await apiRequest<TodoPayload<'POST'>>(
   '/api/todos',
   'POST',
   { text: 'New todo', status: 'pending' }
 );
 
-// Todo更新
-const updatedTodo = await apiRequest<TodoType>(
-  `/api/todos/${todoId}`,
+// Todo更新（リクエストとレスポンスが同じ型）
+const updatedTodo = await apiRequest<TodoPayload<'PUT'>>(
+  '/api/todos',
   'PUT',
-  { text: 'Updated todo' }
+  { id: todoId, text: 'Updated todo' }
 );
+```
 
-// Todo削除
-await apiRequest<void>(
-  `/api/todos/${todoId}`,
-  'DELETE'
-);
+**型安全な使用例（リクエストとレスポンスの型が異なる場合）**:
+```typescript
+// Todo作成（型安全バージョン）
+const newTodo = await apiRequest<
+  TodoPayload<'POST', true>,
+  TodoResponse<'POST'>
+>('/api/todos', 'POST', {
+  text: 'New todo',
+  status: 'pending',
+  createdTime: Date.now().toString(),
+  updateTime: Date.now().toString(),
+  bool: false
+});
+
+// List作成
+const newList = await apiRequest<
+  ListPayload<'POST'>,
+  ListResponse<'POST'>
+>('/api/lists', 'POST', {
+  category: 'New Category',
+  number: 1
+});
+
+// 削除（レスポンスは削除メッセージ）
+await apiRequest<
+  TodoPayload<'DELETE', true>,
+  TodoResponse<'DELETE'>
+>('/api/todos', 'DELETE', {
+  id: todoId
+});
 ```
 
 #### エラーハンドリング
@@ -126,7 +160,8 @@ try {
 #### 設計思想
 
 **1. 汎用性**
-- ジェネリック型による柔軟な型対応
+- 2つのジェネリック型による柔軟な型対応
+- リクエストとレスポンスの型を個別に指定可能
 - 様々なAPIエンドポイントで再利用可能
 
 **2. 一貫性**
@@ -135,7 +170,9 @@ try {
 
 **3. 型安全性**
 - TypeScriptの型システムを活用
+- リクエストボディとレスポンスデータの個別型チェック
 - コンパイル時の型チェック
+- Payload型とResponse型の組み合わせによる厳密な型定義
 
 **4. セキュリティ**
 - セッション情報の自動管理

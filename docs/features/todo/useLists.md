@@ -58,6 +58,7 @@ initialLists: StatusListProps[]
 
 - `/api/lists` エンドポイントとの連携
 - POST（追加）、PUT（順序変更）
+- 型安全なAPI呼び出し：`apiRequest<ListPayload<Method>, ListResponse<Method>>`
 
 ## 7. エラー管理
 
