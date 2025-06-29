@@ -66,3 +66,20 @@ initialTodos: TodoListProps[]
 ## 7. 日時管理
 
 - `jstTime()`: 日本時間での作成日時・更新日時設定
+- タイムスタンプは文字列形式でサーバーに送信（`IsMock = true`を使用）
+- サーバーサイドで`Timestamp.fromMillis()`により適切なFirestore Timestampオブジェクトに変換
+
+## 8. タイムスタンプソート処理
+
+共通の`getTime`ヘルパー関数により、多様なタイムスタンプ形式に対応：
+
+### 対応形式
+1. **number型**: 直接数値として処理
+2. **Firestore Timestamp**: `toMillis()`メソッドを呼び出し
+3. **文字列**: `parseInt(String(timestamp), 10)`で数値に変換
+4. **無効値**: フォールバック値として0を返却
+
+### 使用箇所
+- Todo追加時のソート処理
+- Todo保存時のソート処理
+- 作成日時の降順ソート（最新が上位）
