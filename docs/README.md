@@ -117,7 +117,22 @@ todoApp-next/
 │   ├── validatedData.ts        # バリデーション済みデータ
 │   └── links/                  # 外部リンク定義
 ├── public/                     # 静的アセット、画像関連
-├── todoApp-submodule/          # モックデータとドキュメント
+├── tests/                      # テストファイルと設定
+│   ├── setup.ts                # グローバルテスト環境セットアップ
+│   ├── test-utils.tsx          # カスタムレンダー関数とユーティリティ
+│   └── features/               # フィーチャーベースのテスト構造
+│       └── todo/               # Todo機能のテスト
+├── todoApp-submodule/          # モックAPIとドキュメント用のサブモジュール
+│   ├── mocks/                  # MSWハンドラーとモックデータ
+│   │   ├── data/               # モックデータ定義
+│   │   └── handlers/           # APIハンドラー定義
+│   └── docs/                   # プロジェクトドキュメント
+│       └── features/           # 機能別仕様書
+│           └── todo/           # Todo機能の詳細仕様
+│               ├── contexts/   # Context仕様書
+│               ├── hooks/      # カスタムフック仕様書
+│               ├── components/ # コンポーネント仕様書
+│               └── templates/  # テンプレート仕様書
 └── types/                      # TypeScript型定義
     ├── common.ts               # 共通型定義
     ├── components.ts           # コンポーネント型定義
@@ -128,3 +143,50 @@ todoApp-next/
     ├── form/                   # フォーム関連型定義
     └── markdown/               # マークダウン関連型定義
 ```
+
+## 開発コマンド
+
+```bash
+# 開発
+npm run dev              # Turbopackで開発サーバーを起動
+npm run build           # クリーンビルド（.nextディレクトリ削除＋ビルド）
+npm start               # 本番サーバーを起動
+
+# コード品質
+npm run lint            # ESLintを自動修正で実行
+npm run prettier        # Prettierでコードをフォーマット
+npm run format          # prettierとlintの両方を実行
+
+# テスト・モック
+npm run test            # Vitestでテスト実行
+npm run test:coverage   # カバレッジ付きテスト実行
+npm run test:ui         # Vitest UIモードでテスト実行
+npm run msw:init        # Mock Service Workerを初期化
+```
+
+## Claude Code指示書
+
+- **プロジェクト全体**: `/CLAUDE.md` - プロジェクト開発ガイドライン
+- **Todo機能**: `/features/todo/CLAUDE.md` - Todo機能の技術仕様
+- **テスト**: `/tests/CLAUDE.md` - テスト戦略とガイドライン
+
+## 認証フロー
+
+- カスタム認証プロバイダーを使用したNextAuth.js
+- サーバーサイドトークン検証用のFirebase Admin SDK
+- `/api/auth/server-login`経由でのカスタムトークン交換
+- ロールベースアクセス制御（admin/userロール）
+
+## データ管理
+
+- Todo状態管理用のReact Context（`TodoContext`）
+- サーバー状態管理とキャッシュ用のSWR
+- データベースとしてのFirebase Firestore
+- より良いUXのための楽観的更新
+
+## テスト戦略
+
+- **フレームワーク**: Vitest + React Testing Library + MSW
+- **カバレッジ**: 100%達成済み
+- **モック**: MSWによるAPIモックとテストデータ管理
+- **テスト構造**: フィーチャーベースのテスト組織化
