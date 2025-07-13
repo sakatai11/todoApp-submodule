@@ -46,6 +46,8 @@ todoApp-next/
 │   ├── (auth)/                 # 認証機能関連のルート（グループ化）
 │   │   ├── _signIn/            # サインイン用ロジック
 │   │   │   └── signIn.ts
+│   │   ├── _signOut/           # サインアウト用ロジック
+│   │   │   └── signOut.ts
 │   │   ├── _signUp/            # サインアップ用ロジック
 │   │   │   └── signUp.ts
 │   │   ├── account/            # アカウント関連
