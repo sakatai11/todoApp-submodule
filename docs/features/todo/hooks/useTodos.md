@@ -65,9 +65,9 @@ initialTodos: TodoListProps[]
 
 ## 7. 日時管理
 
-- `jstTime()`: 日本時間での作成日時・更新日時設定
-- タイムスタンプは文字列形式でサーバーに送信（`IsMock = true`を使用）
-- サーバーサイドで`Timestamp.fromMillis()`により適切なFirestore Timestampオブジェクトに変換
+- **サーバーサイドタイムスタンプ生成**: `Timestamp.now()`でサーバーサイドで作成日時・更新日時を生成
+- クライアントサイドでは時間の生成を行わず、サーバーからの応答データを使用
+- Firebase Timestampオブジェクトの処理は`getTime`ヘルパー関数で統一対応
 
 ## 8. タイムスタンプソート処理
 
@@ -83,3 +83,66 @@ initialTodos: TodoListProps[]
 - Todo追加時のソート処理
 - Todo保存時のソート処理
 - 作成日時の降順ソート（最新が上位）
+
+## 9. 実際のデータ更新パターン
+
+### Todo追加パターン
+```typescript
+// useStateベースの楽観的更新（useTodos.ts）
+const addTodo = async (newTodo: Omit<TodoListProps, 'id' | 'createdTime' | 'updateTime'>) => {
+  try {
+    // 1. API呼び出し（サーバーサイドで時間生成）
+    const result = await apiRequest('/api/todos', 'POST', newTodo);
+    // 2. 成功時のローカル状態更新
+    setTodos((prevTodos) => [...prevTodos, result]);
+  } catch (error) {
+    // エラーハンドリング
+    setError(error.message);
+    throw error;
+  }
+};
+```
+
+### Todo編集パターン
+```typescript
+// 編集時の更新パターン
+const saveTodo = async (id: string, updateData: { text: string; status: string }) => {
+  try {
+    // 1. API呼び出し（サーバーサイドでupdateTime生成）
+    const result = await apiRequest('/api/todos', 'PUT', { id, ...updateData });
+    // 2. サーバーからの最新データでローカル状態更新
+    setTodos((prevTodos) => 
+      prevTodos.map((todo) => 
+        todo.id === id ? result : todo
+      )
+    );
+  } catch (error) {
+    // エラーハンドリング
+    setError(error.message);
+    throw error;
+  }
+};
+```
+
+### Todo削除パターン
+```typescript
+// 削除時の楽観的更新
+const deleteTodo = async (id: string) => {
+  // 削除対象を保存（ロールバック用）
+  const todoToDelete = todos.find((todo) => todo.id === id);
+
+  try {
+    // 1. 即座にUI更新（楽観的更新）
+    setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
+    // 2. API呼び出し
+    await apiRequest('/api/todos', 'DELETE', { id });
+  } catch (error) {
+    // 3. エラー時はロールバック
+    if (todoToDelete) {
+      setTodos((prevTodos) => [...prevTodos, todoToDelete]);
+    }
+    setError(error.message);
+    throw error;
+  }
+};
+```

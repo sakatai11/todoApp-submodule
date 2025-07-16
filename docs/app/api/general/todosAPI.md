@@ -19,19 +19,18 @@
 {
   text: string;
   status: string;
-  updateTime: string;
-  createdTime: string;
+  bool: boolean;
 }
 ```
 
 #### レスポンス
-- 成功（200）：作成されたTodoオブジェクト（IDを含む）
-- エラー（400）：text, statusが不足またはタイムスタンプが無効
+- 成功（200）：作成されたTodoオブジェクト（IDとサーバーサイドタイムスタンプを含む）
+- エラー（400）：text, statusが不足
 - エラー（500）：サーバーエラー
 
-#### バリデーション
-- `updateTime`と`createdTime`は数値に変換可能な文字列である必要があります
-- 無効なタイムスタンプの場合、400エラー「Invalid timestamp values」を返します
+#### 時間管理
+- `createdTime`と`updateTime`はサーバーサイドで`Timestamp.now()`により自動生成
+- クライアントからのタイムスタンプ送信は不要
 
 ### PUT - Todo更新
 
@@ -51,7 +50,6 @@
   id: string;
   text: string;
   status: string;
-  updateTime: string;
 }
 ```
 
@@ -67,13 +65,13 @@
 ```
 
 #### レスポンス
-- 成功（200）：更新完了メッセージ
-- エラー（400）：必須フィールド不足またはタイムスタンプが無効
+- 成功（200）：Todo内容更新の場合は更新されたTodoオブジェクト、その他は更新完了メッセージ
+- エラー（400）：必須フィールド不足
 - エラー（500）：サーバーエラー
 
-#### バリデーション（Todo内容の更新の場合）
-- `updateTime`は数値に変換可能な文字列である必要があります
-- 無効なタイムスタンプの場合、400エラー「Invalid updateTime value」を返します
+#### 時間管理（Todo内容の更新の場合）
+- `updateTime`はサーバーサイドで`Timestamp.now()`により自動更新
+- クライアントからのタイムスタンプ送信は不要
 
 ### DELETE - Todo削除
 

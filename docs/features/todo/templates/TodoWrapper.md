@@ -93,6 +93,43 @@ type DataProps = {
 }
 ```
 
+## 5.1. useSWR使用パターン
+
+### 基本的な使用方法
+```typescript
+// TodoWrapper.tsx - 初期データ取得のみ
+const { data, error, isLoading } = useSWR<DataProps>(
+  '/api/dashboards',
+  fetcher,
+  {
+    revalidateOnMount: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    suspense: false,
+    shouldRetryOnError: false,
+  },
+);
+
+// データ取得完了後、TodoProviderに初期データを渡す
+if (isLoading || !data || !data.contents) return <TodosLoading />;
+if (error) return <ErrorDisplay message={error.message} />;
+
+const { contents } = data;
+const { todos, lists } = contents;
+
+<TodoProvider initialTodos={todos} initialLists={lists}>
+  <Box>
+    <PushContainer />
+    <MainContainer />
+  </Box>
+</TodoProvider>
+```
+
+### 使用箇所と役割
+- **使用箇所**: TodoWrapperコンポーネントでの初期データ取得のみ
+- **役割**: サーバーからのTodo・リストデータ取得とContext初期化
+- **制約**: 初期データ取得後は、useSWRではなくuseStateベースの状態管理を使用
+
 ## 6. エラーハンドリング
 
 ### 3層エラーハンドリング

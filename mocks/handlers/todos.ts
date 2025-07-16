@@ -13,9 +13,12 @@ export const todosHandlers = [
 
   // POST todo
   http.post('/api/todos', async ({ request }) => {
-    const body = (await request.json()) as TodoPayload<'POST', true>;
+    const body = (await request.json()) as TodoPayload<'POST'>;
+    const currentTime = new Date().toISOString();
     const newTodo: MockTodoListProps = {
       id: `todo-${Date.now()}`,
+      createdTime: currentTime,
+      updateTime: currentTime,
       ...body,
     };
     todos.push(newTodo);
@@ -24,7 +27,7 @@ export const todosHandlers = [
 
   // PUT todo
   http.put('/api/todos', async ({ request }) => {
-    const body = (await request.json()) as TodoPayload<'PUT', true>;
+    const body = (await request.json()) as TodoPayload<'PUT'>;
 
     // Toggle bool
     if ('id' in body && 'bool' in body) {
@@ -38,26 +41,23 @@ export const todosHandlers = [
     }
 
     // Update text and status
-    if (
-      'id' in body &&
-      'text' in body &&
-      'status' in body &&
-      'updateTime' in body
-    ) {
-      todos = todos.map((todo) =>
-        todo.id === body.id
-          ? {
-              ...todo,
-              text: body.text,
-              status: body.status,
-              updateTime: body.updateTime,
-            }
-          : todo,
-      );
-      return HttpResponse.json(
-        { message: 'Todo updated save' },
-        { status: 200 },
-      );
+    if ('id' in body && 'text' in body && 'status' in body) {
+      const currentTime = new Date().toISOString();
+      const updatedTodo = todos.find((todo) => todo.id === body.id);
+      if (!updatedTodo) {
+        return HttpResponse.json({ error: 'Todo not found' }, { status: 404 });
+      }
+
+      const newTodo = {
+        ...updatedTodo,
+        text: body.text,
+        status: body.status,
+        updateTime: currentTime,
+      };
+
+      todos = todos.map((todo) => (todo.id === body.id ? newTodo : todo));
+
+      return HttpResponse.json(newTodo, { status: 200 });
     }
 
     // Restatus

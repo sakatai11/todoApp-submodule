@@ -2,30 +2,38 @@
 
 ## 1. 概要
 
-- 日本標準時（JST）での日付・時刻処理を行うユーティリティ関数群。
-- タイムスタンプ生成と日付フォーマット機能を提供。
+- Firebase Timestampオブジェクトの処理と日付フォーマット機能を提供。
+- サーバーサイドタイムスタンプ生成における多様な形式のタイムスタンプ処理をサポート。
 
 ## 2. 関数
 
-### jstTime
+### getTime
 
 #### 概要
-- 現在の日本標準時（JST）のDateオブジェクトを返す。
+- 多様なタイムスタンプ形式を統一的に処理してミリ秒単位の数値として返却。
+
+#### パラメータ
+```typescript
+timestamp: unknown // 様々な形式のタイムスタンプ
+```
 
 #### 戻り値
 ```typescript
-Date // JST調整されたDateオブジェクト
+number // ミリ秒単位のタイムスタンプ
 ```
 
 #### 処理詳細
-1. 現在のUTC時間を取得
-2. UTC時間に9時間（日本のタイムゾーン）を加算
-3. JST調整されたDateオブジェクトを返却
+1. **number型**: そのまま返却
+2. **オブジェクト型**: 
+   - `toMillis()`メソッドが存在する場合は呼び出し
+   - `_seconds`プロパティが存在する場合はFirebase Timestamp形式として処理
+3. **文字列・その他**: `parseInt()`で数値変換、失敗時は0を返却
 
 #### 使用例
 ```typescript
-const jstNow = jstTime();
-const timestamp = jstNow.getTime(); // JST タイムスタンプ
+const timestamp1 = getTime(1640995200000); // number型
+const timestamp2 = getTime({ toMillis: () => 1640995200000 }); // Firebase Timestamp
+const timestamp3 = getTime({ _seconds: 1640995, _nanoseconds: 200000000 }); // Firebase Timestamp内部形式
 ```
 
 ### jstFormattedDate
@@ -57,9 +65,11 @@ const formatted = jstFormattedDate(1640995200000);
 
 ## 3. 特徴
 
-### タイムゾーン対応
-- UTC → JST への適切な変換
-- サーバー・クライアント間の時刻統一
+### 多様なタイムスタンプ形式対応
+- Firebase Timestampオブジェクト（`toMillis()`メソッド）
+- Firebase Timestamp内部形式（`_seconds`、`_nanoseconds`プロパティ）
+- number型タイムスタンプ
+- 文字列タイムスタンプ
 
 ### 日本語フォーマット
 - 日本のユーザーに適した表示形式
@@ -67,6 +77,7 @@ const formatted = jstFormattedDate(1640995200000);
 
 ## 4. 使用場面
 
-- Todo項目の作成日時・更新日時の生成
+- サーバーサイドから取得したFirebase Timestampの処理
+- Todo項目のソート処理でのタイムスタンプ正規化
 - UI での日付表示
-- データベース保存時のタイムスタンプ生成
+- 様々なタイムスタンプ形式の統一的な処理

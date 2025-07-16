@@ -53,8 +53,6 @@ export type TodoPayload<
   text: string;
   status: string;
   bool: boolean;
-  createdTime: DateType<IsMock>;
-  updateTime: DateType<IsMock>;
 }
 ```
 
@@ -66,7 +64,7 @@ export type TodoPayload<
 **PUT**: Todo更新時（Union型）
 ```typescript
 | { id: string; bool: boolean }                    // 完了状態切り替え
-| { id: string; updateTime: DateType<IsMock>; text: string; status: string; } // 内容更新
+| { id: string; text: string; status: string; }   // 内容更新（updateTimeはサーバーサイド生成）
 | { type: 'restatus'; data: { oldStatus: string; status: string; } }          // ステータス一括変更
 ```
 
@@ -111,7 +109,27 @@ HTTPメソッド別のAPIレスポンス型
 }
 ```
 
-**PUT/DELETE**: 更新・削除完了時
+**PUT**: 更新完了時
+```typescript
+// 内容更新の場合：更新されたTodoオブジェクト
+{
+  id?: string;
+  text?: string;
+  status?: string;
+  bool?: boolean;
+  createdTime?: Timestamp;
+  updateTime?: Timestamp;
+  error?: string;
+}
+
+// その他の場合：更新完了メッセージ
+{
+  message?: string;
+  error?: string;
+}
+```
+
+**DELETE**: 削除完了時
 ```typescript
 {
   message?: string;
@@ -124,6 +142,11 @@ HTTPメソッド別のAPIレスポンス型
 ### 型安全性
 - 条件型によるHTTPメソッド別の厳密な型定義
 - Union型による複数パターンの更新処理対応
+
+### サーバーサイドタイムスタンプ生成
+- `createdTime`と`updateTime`はサーバーサイドで自動生成
+- クライアントからのタイムスタンプ送信は不要（型定義から除外）
+- Firebase Timestamp形式での一貫した時間管理
 
 ### 環境対応
 - モック・本番環境での日付型の自動切り替え
