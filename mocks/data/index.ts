@@ -11,3 +11,8 @@ export const contents = {
 
 //user data
 export const user = mockUser;
+
+// E2Eテスト用のエクスポート
+export const mockTodos = todos;
+export const mockLists = lists;
+export { mockUser };

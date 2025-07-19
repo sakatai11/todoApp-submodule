@@ -37,8 +37,18 @@ TodoApp-Nextは、Next.jsをベースにしたタスク管理アプリケーシ�
 
 ## プロジェクト構造
 
+**注意**: この構造は開発環境でのファイル構成を示しています。本番環境（Vercel等）では、Docker関連ファイル、テスト関連ファイル、開発用設定ファイルは含まれません。
+
 ```
 todoApp-next/
+├── docker-compose.yml          # 開発用Docker構成
+├── docker-compose.test.yml     # テスト用Docker構成
+├── Dockerfile                  # Next.jsアプリ用Dockerfile
+├── Dockerfile.test             # E2Eテスト用Dockerfile
+├── firebase.json               # Firebase設定（開発用）
+├── firebase.test.json          # Firebase設定（テスト用）
+├── playwright.config.ts        # Playwright設定
+├── vitest.integration.config.ts # 統合テスト設定
 ├── app/                        # Next.jsのApp Routerベースのルート定義
 │   ├── (admin)/                # 管理者関連のルート（グループ化）
 │   │   └── admin/              # 管理者ページ
@@ -119,11 +129,28 @@ todoApp-next/
 │   ├── validatedData.ts        # バリデーション済みデータ
 │   └── links/                  # 外部リンク定義
 ├── public/                     # 静的アセット、画像関連
-├── tests/                      # テストファイルと設定
-│   ├── setup.ts                # グローバルテスト環境セットアップ
+├── tests/                      # テストファイルと設定（22ファイル、413テスト）
+│   ├── setup.ts                # グローバルテスト環境セットアップ（ユニットテスト用）
+│   ├── setup-db.ts             # Firebase Emulator データベース初期化スクリプト
+│   ├── setup-integration.ts    # 統合テスト環境セットアップ
 │   ├── test-utils.tsx          # カスタムレンダー関数とユーティリティ
+│   ├── fixtures/               # テストフィクスチャ（Firebase Emulator用）
+│   │   ├── auth_export/        # 認証データエクスポート
+│   │   └── firestore_export/   # Firestoreデータエクスポート
+│   ├── e2e/                    # E2Eテストファイル（Playwright）
+│   │   ├── global-setup.ts     # E2Eテスト用グローバルセットアップ
+│   │   ├── global-teardown.ts  # E2Eテスト用グローバルクリーンアップ
+│   │   └── todo-flow.spec.ts   # Todo機能の包括的E2Eテスト
 │   └── features/               # フィーチャーベースのテスト構造
-│       └── todo/               # Todo機能のテスト
+│       ├── libs/               # 共通ライブラリテスト
+│       ├── shared/             # 共通コンポーネントテスト
+│       ├── todo/               # Todo機能のテスト
+│       │   ├── api.integration.test.ts    # Todo API統合テスト
+│       │   ├── components/                # Todoコンポーネントテスト（13ファイル）
+│       │   ├── contexts/                  # TodoContextテスト
+│       │   ├── hooks/                     # Todo関連フックテスト（4ファイル）
+│       │   └── templates/                 # TodoWrapperテンプレートテスト
+│       └── utils/              # ユーティリティ関数テスト（4ファイル）
 ├── todoApp-submodule/          # モックAPIとドキュメント用のサブモジュール
 │   ├── mocks/                  # MSWハンドラーとモックデータ
 │   │   ├── data/               # モックデータ定義
