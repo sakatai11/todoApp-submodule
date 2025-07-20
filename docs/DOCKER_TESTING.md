@@ -1,30 +1,38 @@
-# Docker + Database 統合テスト環境
+# Docker統合テスト環境
 
-Next.js TodoアプリケーションでDocker を使用してFirebase Emulatorを含む統合テスト環境を構築し、API統合テストとE2Eテストを実施するための環境構築と使用方法について説明します。
+Next.js TodoアプリケーションでDocker を使用してFirebase Emulatorを含む統合テスト環境を構築し、API統合テストを実施するための環境構築と使用方法について説明します。
 
-## 🏗️ 構築された環境
+## 🏗️ 統合テスト環境の構成
 
-### Docker構成
-- **Next.js App (TodoApp)**: メインアプリケーション（ポート3000/3001）
+### Docker統合テスト環境
+
+統合テストは**Docker環境専用**で、開発環境とは完全に分離されています。
+
+#### 📍 テスト環境のポート設定
+
+| サービス                 | テスト環境ポート |
+| ------------------------ | ---------------- |
+| **Next.jsアプリ**        | `localhost:3001` |
+| **Firebase Emulator UI** | `localhost:4001` |
+| **Firestore Emulator**   | `localhost:8081` |
+| **Auth Emulator**        | `localhost:9100` |
+
+#### 🔧 構成要素
+
+- **Next.js App (TodoApp)**: テスト用メインアプリケーション
 - **Firebase Emulator Suite**: Node.js Alpine ベースでFirestore + Auth エミュレーター
-- **テスト専用環境**: 開発環境と分離された統合テスト環境
-- **E2Eテスト環境**: Playwright による自動ブラウザテスト
 - **統合テスト専用コンテナ**: Vitest + Firebase Emulator連携
 
-### テスト種別とカバレッジ
-- **統合テスト (Integration Test)**: API ↔ Firebase Emulator間の完全なデータフロー確認
-  - **Todo API**: GET/POST/PUT/DELETE 全操作
-  - **Lists API**: リスト管理機能
-  - **認証フロー**: NextAuth.js + Firebase Admin SDK
-  - **型安全性**: TypeScript strict mode準拠
-- **E2Eテスト (End-to-End Test)**: ブラウザ操作 ↔ DB反映確認
-  - **Todo機能全フロー**: 作成→編集→削除→ピン留め
-  - **ドラッグ&ドロップ**: @dnd-kit による並び替え
-  - **レスポンシブ対応**: モバイル/デスクトップ表示
+### 統合テスト対象とカバレッジ
 
-## 🚀 使用方法
+- **Todo API**: GET/POST/PUT/DELETE 全操作
+- **Lists API**: リスト管理機能
+- **認証フロー**: NextAuth.js + Firebase Admin SDK
+- **型安全性**: TypeScript strict mode準拠
 
-### 1. 環境セットアップ
+## 🚀 統合テストの実行方法
+
+### 📋 1. 前提条件
 
 ```bash
 # 依存関係のインストール
@@ -32,99 +40,69 @@ npm install
 
 # Firebase CLI（未インストールの場合）
 npm install -g firebase-tools
-
-# Playwrightブラウザのインストール
-npx playwright install
 ```
 
-### 2. 開発環境の起動
+### 🧪 2. テスト環境の起動
 
 ```bash
-# 開発用Docker環境の起動（NextJS + Firebase Emulator）
-npm run docker:dev
-
-# エミュレータUIアクセス
-# http://localhost:4000 - Firebase Emulator UI
-# http://localhost:3000 - NextJSアプリ
-```
-
-### 3. テスト専用環境の起動
-
-```bash
-# テスト専用Docker環境の起動
+# テスト環境の起動
 npm run docker:test
 
-# テスト環境へのアクセス
-# http://localhost:4001 - Firebase Emulator UI (テスト用)
-# http://localhost:3001 - NextJSアプリ (テスト用)
+# テスト環境へのアクセス（手動確認用）
+# 🌐 http://localhost:3001 - Next.jsアプリ (テスト用)
+# 🔧 http://localhost:4001 - Firebase Emulator UI (テスト用)
 ```
 
-**注意**: Firebase Emulatorは初回起動時にJavaランタイムとFirebase CLIのインストールが実行されるため、数分かかる場合があります。
+**⚠️ 注意**: Firebase Emulatorは初回起動時にJavaランタイムとFirebase CLIのインストールが実行されるため、数分かかる場合があります。
 
-### 4. 統合テスト（API Integration Test）の実行
+### ⚡ 3. Docker統合テストの実行
+
+**重要**: 統合テストはDocker環境でのみサポートされています。
 
 ```bash
-# 統合テストの実行（Todo API + Lists API）
-npm run test:integration
-
-# 統合テストの監視モード（UI付き）
-npm run test:integration:ui
-
-# Dockerコンテナ内で統合テストを実行
+# Docker統合テストの実行（Todo API + Lists API）
 npm run docker:test:run
 
-# 統合テスト結果例
-# ✅ Todo API統合テスト (4テスト)
+# 統合テスト結果例（最新成功結果）
+# ✅ Test Files: 1 passed (1)
+# ✅ Tests: 7 passed (7)
+# ⏱️ Duration: 3.51s (高速実行を実現)
+# ✅ Todo API統合テスト (6テスト)
 #   - GET /api/(general)/todos: 認証済みユーザーのTodo取得
+#   - GET /api/(general)/todos: 未認証ユーザーの401エラー
 #   - POST /api/(general)/todos: 新規Todo作成（201 Created）
+#   - POST /api/(general)/todos: 無効データの400エラー
 #   - PUT /api/(general)/todos: 既存Todo更新
 #   - DELETE /api/(general)/todos: Todo削除
 # ✅ Lists API統合テスト (1テスト)
 #   - GET /api/(general)/lists: リスト一覧取得
 ```
 
-### 5. E2Eテストの実行
+**注意**: ローカル環境での統合テスト（`npm run test:integration`）は廃止されました。統合テストはDocker環境（`npm run docker:test:run`）でのみ実行されます。
 
-```bash
-# E2Eテストの実行
-npm run test:e2e
+**技術詳細**: Docker環境ではMSW（Mock Service Worker）が自動的に無効化され、Firebase Emulatorとの直接通信を実現。データベース初期化のタイムアウトは30秒に延長されています。
 
-# E2EテストのUIモード
-npm run test:e2e:ui
-
-# Dockerコンテナ内でE2Eテストを実行
-npm run docker:e2e:run
-```
-
-### 6. 環境のクリーンアップ
+### 🧹 4. テスト環境の停止
 
 ```bash
 # テスト環境の停止
 npm run docker:test:down
-
-# 開発環境の停止
-docker-compose down
 ```
 
-**ファイル構成の詳細は[PRODUCTS.md - プロジェクト構造](PRODUCTS.md#プロジェクト構造)を参照してください。**
+## ⚙️ 統合テスト設定
 
-## 🔧 カスタマイズ
+### 📝 ポート設定の変更
 
-### ポート設定の変更
+統合テスト環境のポート設定を変更する場合：
 
-必要に応じて以下のファイルでポートを変更できます：
+| 設定ファイル              | 用途                   |
+| ------------------------- | ---------------------- |
+| `docker-compose.test.yml` | テスト環境のポート設定 |
+| `firebase.test.json`      | Emulatorのポート設定   |
 
-- `docker-compose.yml`: 開発環境のポート
-- `docker-compose.test.yml`: テスト環境のポート
-- `firebase.json` / `firebase.test.json`: Emulatorのポート
-
-### テストデータの設定
+### 🗄️ テストデータの設定
 
 `tests/setup-db.ts`でテスト用の初期データを設定できます。
-
-### E2Eテストの拡張
-
-`tests/e2e/`ディレクトリに新しい`.spec.ts`ファイルを追加してテストケースを拡張できます。
 
 ## 🐛 トラブルシューティング
 
@@ -182,63 +160,43 @@ node -r esbuild-register tests/setup-db.ts
 
 ## 📊 CI/CD統合
 
-GitHub ActionsなどのCI/CD環境で使用する場合：
+GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
 
 ```yaml
 # .github/workflows/test.yml
-- name: Run IT Tests (Integration Tests)
+- name: Run Docker Integration Tests
   run: |
-    npm run docker:test
-    npm run test:integration
-    npm run docker:test:down
-
-- name: Run E2E Tests  
-  run: |
-    npm run docker:test
-    npm run test:e2e
-    npm run docker:test:down
+    npm run docker:test:run
 ```
 
-## 🎯 ベストプラクティス
+## 🔄 最新の変更内容（2025年実装）
 
-1. **テストの独立性**: 各テストは他のテストに依存しない
-2. **データクリーンアップ**: テスト後のデータクリアを確実に実行
-3. **並列実行**: ITテスト（統合テスト）とE2Eテストは分離して実行
-4. **環境分離**: 開発環境とテスト環境のポートを分ける
-5. **モックデータ**: サブモジュールの統一されたテストデータを使用
-6. **Docker最適化**: Node.js Alpineベースで軽量なEmulator環境を構築
-7. **初回起動時間**: Firebase Emulatorの初回起動は時間がかかることを考慮
-8. **設定ファイル管理**: `firebase.test.json`でホスト設定を適切に管理
+### 完全なDocker統合テスト環境の構築
 
-## 🔄 最新の変更内容（2024年実装）
-
-### 完全な統合テスト環境の構築
-- **Docker統合**: Next.js + Firebase Emulator のフル統合テスト環境
-- **API統合テスト**: Todo/Lists APIの完全なCRUD操作テスト（5テスト実装）
+- **Docker専用統合テスト**: Next.js + Firebase Emulator のフル統合テスト環境
+- **API統合テスト**: Todo/Lists APIの完全なCRUD操作テスト（7テスト実装、3.51秒で高速実行）
+- **MSW自動無効化**: Docker環境でMock Service Workerを自動停止し、実Emulatorとの直接通信を実現
+- **タイムアウト最適化**: データベース初期化処理を30秒に延長し、安定性を向上
+- **ローカル統合テスト廃止**: Docker環境でのみ統合テストをサポート
 - **型安全性の確保**: TypeScript strict mode + ESLint `@typescript-eslint/no-explicit-any` 準拠
 - **REST API標準化**: HTTPステータスコードの適切な使い分け（POST: 201 Created, PUT: 200 OK）
 
-### テスト品質の向上
-- **100%カバレッジ達成**: 22ファイル、413テスト、全成功
-- **統一テストデータ**: サブモジュールのモックデータを全テストで統一使用
-- **表記統一ルール**: テスト説明文の一貫した表記（「正常に〜」パターン）
+### 統合テスト品質の向上
+
+- **7テスト実装**: Todo/Lists APIの完全なCRUD操作テスト（3.51秒で高速実行）
+- **統一テストデータ**: サブモジュールのモックデータを統一使用
 - **Firebase Emulator連携**: 実際のFirestore + Auth Emulatorとの完全統合
 
 ### Docker構成の最適化
+
 - **軽量化**: `node:18-alpine` ベースで高速起動を実現
-- **環境分離**: 開発用（ポート3000/4000）とテスト用（ポート3001/4001）の完全分離
+- **環境分離**: テスト用（ポート3001/4001）で開発環境と完全分離
 - **Firebase CLI安定化**: npm経由での直接インストールで依存関係を解決
 - **設定統一**: `firebase.test.json`による統一設定管理
 
-### API実装の改善
-- **withAuthenticatedUser**: 認証ミドルウェアの型安全な実装
-- **Firebase Admin SDK**: サーバーサイド認証とデータベース操作の統合
-- **エラーハンドリング**: 適切なHTTPステータスコードと詳細なエラーメッセージ
-- **Zodバリデーション**: リクエスト/レスポンスデータの型安全性確保
+## 📋 関連ドキュメント
 
-### E2Eテストの拡充
-- **認証フロー**: NextAuth.js + Firebase Admin SDK の完全なテスト
-- **Todo全機能**: 作成→編集→削除→ピン留めの包括的テスト
-- **ドラッグ&ドロップ**: @dnd-kit/core による並び替え機能テスト
-- **レスポンシブ対応**: モバイル/デスクトップ表示の自動テスト
-- **リアルタイム同期**: Firebase Emulatorとの実データ連携テスト
+- [tests/UT_TEST.md](tests/UT_TEST.md) - ユニットテストガイド
+- [tests/IT_TEST.md](tests/IT_TEST.md) - 統合テスト環境選択ガイド
+- [tests/E2E_TEST.md](tests/E2E_TEST.md) - E2Eテストガイド
+- [DOCKER_DEVELOPMENT.md](DOCKER_DEVELOPMENT.md) - Docker開発環境
