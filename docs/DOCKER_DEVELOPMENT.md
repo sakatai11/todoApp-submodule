@@ -24,6 +24,7 @@ Next.js TodoアプリケーションのDocker開発環境の構築と使用方�
 - **Next.js App (TodoApp)**: メインアプリケーション
 - **Firebase Emulator Suite**: Node.js Alpine ベースでFirestore + Auth エミュレーター
 - **開発用データベース**: 開発データ専用のFirestore
+- **MSW無効化**: `NEXT_PUBLIC_API_MOCKING=disabled`でモックAPI無効化済み
 
 ## 🚀 開発環境の使用方法
 
@@ -138,6 +139,7 @@ docker-compose down --remove-orphans
 - **データ分離**: 開発データとテストデータが混在しない
 - **安定性向上**: テスト実行が開発環境に影響を与えない
 - **並行作業**: 開発とテストを同時に実行可能
+- **API環境統一**: Firebase EmulatorとMSWの競合を回避し、実環境に近い開発体験を提供
 
 ## 📋 関連ドキュメント
 
