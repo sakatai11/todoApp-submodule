@@ -66,7 +66,7 @@ npm run docker:test:run
 # 統合テスト結果例（最新成功結果）
 # ✅ Test Files: 1 passed (1)
 # ✅ Tests: 7 passed (7)
-# ⏱️ Duration: 3.51s (高速実行を実現)
+# ⏱️ Duration: 13.03s (Firebase Emulator + Next.js + 統合テスト完全連携)
 # ✅ Todo API統合テスト (6テスト)
 #   - GET /api/(general)/todos: 認証済みユーザーのTodo取得
 #   - GET /api/(general)/todos: 未認証ユーザーの401エラー
@@ -80,7 +80,7 @@ npm run docker:test:run
 
 **注意**: ローカル環境での統合テスト（`npm run test:integration`）は廃止されました。統合テストはDocker環境（`npm run docker:test:run`）でのみ実行されます。
 
-**技術詳細**: Docker環境ではMSW（Mock Service Worker）が自動的に無効化され、Firebase Emulatorとの直接通信を実現。データベース初期化のタイムアウトは30秒に延長されています。
+**技術詳細**: Docker環境では統合テスト専用設定（`vitest.integration.config.ts`）によりMSW（Mock Service Worker）が自動的に無効化され、Firebase Emulatorとの直接通信を実現。Next.jsアプリ + Firebase Emulator + 統合テストの完全連携環境でテストを実行。
 
 ### 🧹 4. テスト環境の停止
 
@@ -174,7 +174,8 @@ GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
 ### 完全なDocker統合テスト環境の構築
 
 - **Docker専用統合テスト**: Next.js + Firebase Emulator のフル統合テスト環境
-- **API統合テスト**: Todo/Lists APIの完全なCRUD操作テスト（7テスト実装、3.51秒で高速実行）
+- **API統合テスト**: Todo/Lists APIの完全なCRUD操作テスト（7テスト実装、13.03秒で安定実行）
+- **統合テスト専用設定**: `vitest.integration.config.ts`による統合テスト専用のVitest設定
 - **MSW自動無効化**: Docker環境でMock Service Workerを自動停止し、実Emulatorとの直接通信を実現
 - **タイムアウト最適化**: データベース初期化処理を30秒に延長し、安定性を向上
 - **ローカル統合テスト廃止**: Docker環境でのみ統合テストをサポート
@@ -183,7 +184,7 @@ GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
 
 ### 統合テスト品質の向上
 
-- **7テスト実装**: Todo/Lists APIの完全なCRUD操作テスト（3.51秒で高速実行）
+- **7テスト実装**: Todo/Lists APIの完全なCRUD操作テスト（13.03秒で安定実行）
 - **統一テストデータ**: サブモジュールのモックデータを統一使用
 - **Firebase Emulator連携**: 実際のFirestore + Auth Emulatorとの完全統合
 
@@ -196,7 +197,8 @@ GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
 
 ## 📋 関連ドキュメント
 
+- [tests/TEST_ENVIRONMENTS.md](tests/TEST_ENVIRONMENTS.md) - テスト環境ガイドライン
 - [tests/UT_TEST.md](tests/UT_TEST.md) - ユニットテストガイド
-- [tests/IT_TEST.md](tests/IT_TEST.md) - 統合テスト環境選択ガイド
+- [tests/IT_TEST.md](tests/IT_TEST.md) - 統合テストガイド
 - [tests/E2E_TEST.md](tests/E2E_TEST.md) - E2Eテストガイド
 - [DOCKER_DEVELOPMENT.md](DOCKER_DEVELOPMENT.md) - Docker開発環境

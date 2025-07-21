@@ -169,8 +169,9 @@ docker-compose -f docker-compose.test.yml logs
 
 ## 📋 関連ドキュメント
 
+- [TEST_ENVIRONMENTS.md](TEST_ENVIRONMENTS.md) - テスト環境ガイドライン
 - [UT_TEST.md](UT_TEST.md) - ユニットテストガイド
-- [IT_TEST.md](IT_TEST.md) - 統合テスト環境選択ガイド
+- [IT_TEST.md](IT_TEST.md) - 統合テストガイド
 - [../DOCKER_TESTING.md](../DOCKER_TESTING.md) - Docker統合テスト環境
 - [../DOCKER_DEVELOPMENT.md](../DOCKER_DEVELOPMENT.md) - Docker開発環境
 

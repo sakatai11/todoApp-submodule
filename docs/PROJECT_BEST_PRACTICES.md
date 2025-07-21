@@ -69,21 +69,23 @@ Next.js Todoアプリケーションにおけるベストプラクティス、CI
   - 環境変数: `NEXT_PUBLIC_API_MOCKING=enabled`
   - ポート: localhost:3000（App）
 
-- **統合開発・API検証**: Docker + Emulator (`npm run docker:dev`)
-  - Firebase EmulatorでFirestore/Auth の実環境シミュレーション
-  - API統合テストと実際のデータフロー検証に最適
+- **統合開発・API検証**: Docker + MSW (`npm run docker:dev`)
+  - MSWでAPIモック（Firebase Emulatorも起動するが、MSWが優先）
+  - 高速な開発サイクルとモックAPIによる開発効率化
   - ポート: localhost:3000（App）, localhost:4000（Emulator UI）
+  - モックAPI表示: Mock Mode インジケーター付き
 
 ##### テスト環境
 
 - **ユニットテスト**: ローカル + MSW (`npm run test`)
   - MSWでAPIモック、高速テスト実行
-  - 22ファイル、413テスト、100%カバレッジ
+  - 統合テスト除外で純粋なユニットテストのみ実行
   - 実行時間: 高速（秒単位）
 
 - **統合テスト**: Docker専用 (`npm run docker:test:run`)
   - Firebase Emulator + Next.js の完全統合環境
-  - API CRUD操作の実環境テスト（7テスト、3.51秒実行）
+  - API CRUD操作の実環境テスト（7テスト、13.03秒で安定実行）
+  - 統合テスト専用設定（`vitest.integration.config.ts`）でMSW無効化
   - ポート: localhost:3001（App）, localhost:4001（Emulator UI）
 
 - **E2Eテスト**: Docker + Playwright (`npm run docker:e2e:run`)
@@ -92,7 +94,8 @@ Next.js Todoアプリケーションにおけるベストプラクティス、CI
   - 実際のブラウザ環境でのインタラクション検証
 
 **注意事項**:
-- Docker環境でのMSW併用は非推奨（Firebase Emulatorと競合）
+- **開発環境**: MSW有効でモック中心の高速開発
+- **テスト環境**: MSW無効でFirebase Emulator専用の実環境テスト
 - 開発環境（3000番台）とテスト環境（3001番台）のポート完全分離
 - テスト一貫性のため、同じテスト種別では統一データソースを使用
 

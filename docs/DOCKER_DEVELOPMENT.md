@@ -22,9 +22,9 @@ Next.js TodoアプリケーションのDocker開発環境の構築と使用方�
 #### 🔧 構成要素
 
 - **Next.js App (TodoApp)**: メインアプリケーション
-- **Firebase Emulator Suite**: Node.js Alpine ベースでFirestore + Auth エミュレーター
-- **開発用データベース**: 開発データ専用のFirestore
-- **MSW無効化**: `NEXT_PUBLIC_API_MOCKING=disabled`でモックAPI無効化済み
+- **MSW (Mock Service Worker)**: APIリクエストのモック（優先使用）
+- **Firebase Emulator Suite**: Node.js Alpine ベースでFirestore + Auth エミュレーター（バックグラウンド起動）
+- **モック優先設定**: `NEXT_PUBLIC_API_MOCKING=enabled`でMSWが主要なAPI提供
 
 ## 🚀 開発環境の使用方法
 
@@ -139,13 +139,14 @@ docker-compose down --remove-orphans
 - **データ分離**: 開発データとテストデータが混在しない
 - **安定性向上**: テスト実行が開発環境に影響を与えない
 - **並行作業**: 開発とテストを同時に実行可能
-- **API環境統一**: Firebase EmulatorとMSWの競合を回避し、実環境に近い開発体験を提供
+- **モック中心開発**: MSW優先のモックAPIで高速開発、必要時にEmulatorも利用可能
 
 ## 📋 関連ドキュメント
 
 - [DOCKER_TESTING.md](DOCKER_TESTING.md) - Docker統合テスト環境
+- [tests/TEST_ENVIRONMENTS.md](tests/TEST_ENVIRONMENTS.md) - テスト環境ガイドライン
 - [tests/UT_TEST.md](tests/UT_TEST.md) - ユニットテストガイド
-- [tests/IT_TEST.md](tests/IT_TEST.md) - 統合テスト環境選択ガイド
+- [tests/IT_TEST.md](tests/IT_TEST.md) - 統合テストガイド
 - [tests/E2E_TEST.md](tests/E2E_TEST.md) - E2Eテストガイド
 - [PRODUCTS.md](PRODUCTS.md) - プロジェクト全体構造
 

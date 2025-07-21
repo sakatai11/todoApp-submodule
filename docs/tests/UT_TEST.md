@@ -61,7 +61,7 @@ npm install
 ### ⚡ 2. ローカル環境での実行（推奨）
 
 ```bash
-# ユニットテストの実行（watchモード）
+# ユニットテストの実行（watchモード、統合テスト除外）
 npm run test
 
 # UIモードでの実行（推奨：視覚的なテスト管理）
@@ -102,6 +102,7 @@ npm run test:coverage
 - **プラグイン設定**: React テスト用プラグイン
 - **パスエイリアス**: `@/` による絶対パス解決
 - **グローバル設定**: テスト用のグローバル設定
+- **除外設定**: 統合テスト（`**/*integration*.test.ts`）とE2Eテスト（`tests/e2e/**/*.spec.ts`）を除外
 
 ### モック設定
 
@@ -410,7 +411,8 @@ consoleSpy.mockRestore();
 
 ## 📋 関連ドキュメント
 
-- [IT_TEST.md](IT_TEST.md) - 統合テスト環境選択ガイド
+- [TEST_ENVIRONMENTS.md](TEST_ENVIRONMENTS.md) - テスト環境ガイドライン
+- [IT_TEST.md](IT_TEST.md) - 統合テストガイド
 - [E2E_TEST.md](E2E_TEST.md) - E2Eテストガイド
 - [../DOCKER_TESTING.md](../DOCKER_TESTING.md) - Docker統合テスト環境
 - [../../tests/CLAUDE.md](../../../tests/CLAUDE.md) - テスト実装ガイドライン
