@@ -129,9 +129,13 @@ todoApp-next/
 │   ├── validatedData.ts        # バリデーション済みデータ
 │   └── links/                  # 外部リンク定義
 ├── public/                     # 静的アセット、画像関連
+├── scripts/                    # プロジェクト運用スクリプト
+│   ├── init-firebase-data.ts   # Firebase Emulator初期データ投入（tsx実行）
+│   ├── cleanup-db.ts           # テストデータベースクリーンアップ
+│   └── helpers/                # スクリプト用ヘルパー関数
+│       └── testDbDataFetcher.ts # テストデータ取得ユーティリティ
 ├── tests/                      # テストファイルと設定（22ファイル、413テスト）
 │   ├── setup.ts                # グローバルテスト環境セットアップ（ユニットテスト用）
-│   ├── setup-db.ts             # Firebase Emulator データベース初期化スクリプト
 │   ├── setup-integration.ts    # 統合テスト環境セットアップ
 │   ├── test-utils.tsx          # カスタムレンダー関数とユーティリティ
 │   ├── fixtures/               # テストフィクスチャ（Firebase Emulator用）
@@ -154,6 +158,9 @@ todoApp-next/
 ├── todoApp-submodule/          # モックAPIとドキュメント用のサブモジュール
 │   ├── mocks/                  # MSWハンドラーとモックデータ
 │   │   ├── data/               # モックデータ定義
+│   │   │   └── master/         # マスターテストデータ
+│   │   │       └── firebase/   # Firebase用テストデータ
+│   │   │           └── export_test_data.ts # ユーザー分離テストデータ
 │   │   └── handlers/           # APIハンドラー定義
 │   └── docs/                   # プロジェクトドキュメント
 │       └── features/           # 機能別仕様書
@@ -191,6 +198,16 @@ npm run test            # Vitestでテスト実行
 npm run test:coverage   # カバレッジ付きテスト実行
 npm run test:ui         # Vitest UIモードでテスト実行
 npm run msw:init        # Mock Service Workerを初期化
+
+# Docker環境テスト
+npm run docker:test     # Firebase Emulator環境を起動
+npm run docker:test:run # 統合テスト実行（Firebase Emulator + tsx）
+npm run docker:test:down # Docker環境停止
+npm run docker:e2e:run  # E2Eテスト実行
+
+# Firebase Emulator
+npm run emulator:start  # 開発用Firebase Emulator起動
+npm run emulator:test   # テスト用Firebase Emulator起動
 ```
 
 ## Claude Code指示書
@@ -219,3 +236,12 @@ npm run msw:init        # Mock Service Workerを初期化
 - **カバレッジ**: 100%達成済み
 - **モック**: MSWによるAPIモックとテストデータ管理
 - **テスト構造**: フィーチャーベースのテスト組織化
+- **統合テスト**: Docker + Firebase Emulator + tsx実行環境
+- **テストデータ**: ユーザー分離型テストデータ（export_test_data.ts）
+
+### Docker統合テスト環境
+
+- **Firebase Emulator**: Firestore + Auth + UI（ポート分離）
+- **TypeScript実行**: tsx によるリアルタイムトランスパイル
+- **データ初期化**: init-firebase-data.ts による自動テストデータ投入
+- **ユーザー分離**: test-user-1 / test-admin-1 の個別データ構造

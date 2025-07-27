@@ -2,59 +2,33 @@
 
 ## 概要
 
-統合テストは、TodoApp-Nextにおいて複数のコンポーネントやサービスが連携して正常に動作することを検証するテストです。Firebase Emulator + Next.js アプリケーションの完全統合環境で実行され、実際のAPI通信を通じてシステム全体の動作を確認します。
+統合テストは、TodoApp-Nextにおいて複数のコンポーネントやサービスが連携して正常に動作することを検証するテストです。実際のAPI通信を通じてシステム全体の動作を確認し、ユニットテストでは検出できないコンポーネント間の相互作用に関する問題を発見します。
 
-## 🏗️ 統合テスト環境の構成
+## 🎯 統合テストの目的と意義
 
-### Docker専用環境
+### 検証対象
 
-統合テストは**Docker環境でのみ**実行され、以下の完全統合環境で動作します：
+- **API エンドポイント**: REST API の完全なCRUD操作
+- **認証フロー**: NextAuth.js + Firebase Admin SDK の統合
+- **データベース操作**: Firestore での実際のデータ永続化
+- **エラーハンドリング**: 異常系レスポンスの適切性
+- **型安全性**: TypeScript型定義と実際のレスポンスの整合性
 
-- **Firebase Emulator**: Firestore + Auth エミュレーター
-- **Next.js App**: 実際のアプリケーション（ポート3001）
-- **統合テスト**: Vitest + 専用設定ファイル
+### 品質保証
 
-### ポート構成
-
-| サービス | ポート | 説明 |
-|---------|--------|------|
-| Next.js App | `localhost:3001` | テスト用アプリケーション |
-| Firebase Emulator UI | `localhost:4001` | Emulator管理画面 |
-| Firestore Emulator | `localhost:8081` | データベース |
-| Auth Emulator | `localhost:9100` | 認証サービス |
+- **本番環境再現**: Firebase Emulator による実環境に近い条件
+- **システム間連携**: Next.js ↔ Firebase ↔ 認証システムの統合動作
+- **リグレッション防止**: API変更時の既存機能への影響検証
 
 ## 🚀 統合テストの実行
+
+**環境構築**: 詳細な環境設定は [DOCKER_TESTING.md](../DOCKER_TESTING.md) を参照してください。
 
 ### 基本実行
 
 ```bash
 # 統合テストの実行（推奨）
 npm run docker:test:run
-
-# テスト環境の手動起動
-npm run docker:test
-
-# テスト環境の停止
-npm run docker:test:down
-```
-
-### 実行結果例
-
-```bash
-✅ Test Files: 1 passed (1)
-✅ Tests: 7 passed (7)
-⏱️ Duration: 13.03s (Firebase Emulator + Next.js + 統合テスト完全連携)
-
-✅ Todo API統合テスト (6テスト)
-  - GET /api/(general)/todos: 認証済みユーザーのTodo取得
-  - GET /api/(general)/todos: 未認証ユーザーの401エラー
-  - POST /api/(general)/todos: 新規Todo作成（201 Created）
-  - POST /api/(general)/todos: 無効データの400エラー
-  - PUT /api/(general)/todos: 既存Todo更新
-  - DELETE /api/(general)/todos: Todo削除
-
-✅ Lists API統合テスト (1テスト)
-  - GET /api/(general)/lists: リスト一覧取得
 ```
 
 ## ⚙️ 統合テスト設定
@@ -65,41 +39,21 @@ npm run docker:test:down
 
 - **vitest.integration.config.ts**: 統合テスト専用のVitest設定
 - **tests/setup-integration.ts**: 統合テスト用セットアップファイル
+- **scripts/init-firebase-data.ts**: ユーザー分離テストデータ初期化（tsx実行）
 
-### 主要設定内容
+### 設定の特徴
 
-```typescript
-// vitest.integration.config.ts
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./tests/setup-integration.ts'],
-    include: ['**/*integration*.{test,spec}.{js,ts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.next'],
-    testTimeout: 30000, // Firebase Emulator接続用30秒タイムアウト
-  },
-});
-```
-
-### MSW無効化
-
-統合テストでは、Mock Service Worker（MSW）が自動的に無効化され、Firebase Emulatorとの直接通信を実現：
-
-```typescript
-// tests/setup-integration.ts
-// MSWサーバーは起動せず、Firebase Emulator接続確認のみ実行
-beforeAll(async () => {
-  // Firebase Emulator接続確認
-  // MSWは完全無効化
-});
-```
+- **MSW無効化**: `NEXT_PUBLIC_API_MOCKING=disabled` で実API通信
+- **Firebase Emulator接続**: 専用ポートでの分離環境
+- **TypeScript実行**: tsx によるリアルタイムトランスパイル
+- **ユーザー分離データ**: test-user-1 / test-admin-1 による役割別テスト
 
 ## 📊 テスト対象と範囲
 
 ### API統合テスト
 
 #### Todo API（6テスト）
+
 - **GET /api/(general)/todos**
   - 認証済みユーザーのTodoリスト取得
   - 未認証ユーザーの401エラー
@@ -112,6 +66,7 @@ beforeAll(async () => {
   - 既存Todo削除（200 OK）
 
 #### Lists API（1テスト）
+
 - **GET /api/(general)/lists**
   - 認証済みユーザーのリスト取得
 
@@ -120,42 +75,56 @@ beforeAll(async () => {
 - **NextAuth.js + Firebase Admin SDK**: カスタム認証プロバイダーの統合
 - **テスト認証**: `X-User-ID`ヘッダーによるテストユーザー認証
 - **権限制御**: ユーザー固有データの適切な分離
+- **ユーザー分離**: test-user-1（3 todos）/ test-admin-1（3 todos）の独立データ
 
 ### データベース統合
 
-- **Firestore Emulator**: 実際のデータベース操作
-- **データ初期化**: テスト前の確実なデータクリア
-- **テストデータ投入**: サブモジュールの統一モックデータ使用
+- **Firestore Emulator**: 実際のデータベース操作とsubcollection構造
+- **データ初期化**: tsx実行による`scripts/init-firebase-data.ts`での自動初期化
+- **ユーザー分離データ**: `export_test_data.ts`による本番同等のデータ構造
+- **型安全性**: Firebase Timestamp型の適切な使用
 
-## 🔧 技術詳細
+## 🔧 テスト実装の技術詳細
 
-### Docker Compose設定
+### テストファイル構造
 
-```yaml
-# docker-compose.test.yml
-services:
-  integration-test:
-    command: npx vitest run tests/features/todo/api.integration.test.ts --config vitest.integration.config.ts
-    depends_on:
-      firebase-emulator-test:
-        condition: service_healthy
-      nextjs-test:
-        condition: service_started
-    environment:
-      - NODE_ENV=test
-      - NEXT_PUBLIC_API_MOCKING=disabled
-      - FIRESTORE_EMULATOR_HOST=firebase-emulator-test:8080
-      - FIREBASE_AUTH_EMULATOR_HOST=firebase-emulator-test:9099
+```typescript
+// tests/features/todo/api.integration.test.ts
+describe('Todo API Integration Tests', () => {
+  beforeEach(async () => {
+    // データクリアは時間がかかるためスキップし、既存データでテスト
+    console.log('テストデータクリアをスキップ - 既存データでテスト実行');
+  }, 5000);
+
+  it('should get todos for authenticated user', async () => {
+    // 認証済みユーザーでのTodo取得テスト
+  });
+});
 ```
 
-### 環境変数
+### テストデータ管理
 
-| 変数名 | 値 | 説明 |
-|--------|----|----- |
-| `NODE_ENV` | `test` | テスト環境として識別 |
-| `NEXT_PUBLIC_API_MOCKING` | `disabled` | MSW無効化 |
-| `FIRESTORE_EMULATOR_HOST` | `firebase-emulator-test:8080` | Firestore接続先 |
-| `FIREBASE_AUTH_EMULATOR_HOST` | `firebase-emulator-test:9099` | Auth接続先 |
+統合テストでは以下のデータ構造を使用：
+
+```typescript
+// export_test_data.ts からの抜粋
+export const EXPORTED_TODOS_BY_USER: Record<string, TodoListProps[]> = {
+  'test-user-1': [
+    {
+      id: 'todo-1',
+      text: 'Next.js App Routerの学習',
+      status: 'in-progress',
+      bool: true,
+      createdTime: Timestamp.fromDate(new Date('2024-01-01T00:00:00Z')),
+      updateTime: Timestamp.fromDate(new Date('2024-01-01T00:00:00Z')),
+    },
+    // ... 3件のTodoデータ
+  ],
+  'test-admin-1': [
+    // ... 管理者用の3件のTodoデータ
+  ],
+};
+```
 
 ### API通信ログ例
 
@@ -169,84 +138,153 @@ DELETE /api/todos 200 in 43ms   # Todo削除
 GET /api/lists 200 in 1346ms    # リスト取得
 ```
 
-## 🐛 トラブルシューティング
+## 🧪 テスト設計のベストプラクティス
 
-### よくある問題
+### テスト独立性の確保
 
-#### Firebase Emulator接続エラー
-```bash
-# Emulator起動確認
-docker-compose -f docker-compose.test.yml logs firebase-emulator-test
-
-# 手動接続テスト
-curl http://localhost:4001
+```typescript
+describe('API Integration Tests', () => {
+  // ❌ 悪い例：テスト間でデータが依存
+  let createdTodoId: string;
+  
+  it('should create todo', async () => {
+    const response = await createTodo(data);
+    createdTodoId = response.id; // 他テストで使用
+  });
+  
+  it('should update todo', async () => {
+    await updateTodo(createdTodoId, data); // 前テストに依存
+  });
+  
+  // ✅ 良い例：各テストが独立
+  it('should create and update todo independently', async () => {
+    const created = await createTodo(data);
+    const updated = await updateTodo(created.id, updateData);
+    expect(updated).toBeDefined();
+  });
+});
 ```
 
-#### Next.jsアプリ接続エラー
-```bash
-# Next.jsサービス確認
-docker-compose -f docker-compose.test.yml logs nextjs-test
+### エラーケースの網羅
 
-# 手動接続テスト
-curl http://localhost:3001
+```typescript
+describe('Error Handling', () => {
+  it('should return 401 for unauthenticated requests', async () => {
+    const response = await fetch('/api/todos'); // 認証ヘッダーなし
+    expect(response.status).toBe(401);
+  });
+  
+  it('should return 400 for invalid data', async () => {
+    const response = await createTodo({ text: '' }); // 無効なデータ
+    expect(response.status).toBe(400);
+  });
+});
 ```
 
-#### タイムアウトエラー
-- **原因**: Firebase Emulator起動時間
-- **解決**: `testTimeout: 30000`で十分な待機時間を確保
+### 型安全性の検証
 
-### デバッグ方法
-
-```bash
-# 統合テスト詳細ログ
-docker-compose -f docker-compose.test.yml logs integration-test
-
-# 全サービスログ
-docker-compose -f docker-compose.test.yml logs
-
-# コンテナ状態確認
-docker-compose -f docker-compose.test.yml ps
+```typescript
+it('should return correctly typed todo data', async () => {
+  const response = await getTodos();
+  const todos: TodoListProps[] = response.data;
+  
+  todos.forEach(todo => {
+    expect(todo).toHaveProperty('id');
+    expect(todo).toHaveProperty('text');
+    expect(todo.createdTime).toBeInstanceOf(Timestamp);
+  });
+});
 ```
 
-## 📈 パフォーマンス指標
+## 🐛 トラブルシューティングとデバッグ
 
-### 実行時間
-- **総実行時間**: 13.03秒
-- **環境起動**: 約5秒（Firebase Emulator + Next.js）
-- **テスト実行**: 約8秒（7テスト）
+### 統合テスト固有の問題
 
-### リソース使用量
-- **メモリ**: Docker環境で最適化済み
-- **CPU**: 統合テスト専用設定で効率化
-- **ネットワーク**: 内部通信による高速化
+#### テストデータの状態確認
 
-## 🎯 ベストプラクティス
+```bash
+# Firebase Emulator UIでデータ確認
+open http://localhost:4000
 
-### テスト設計
-- **独立性**: 各テストは他のテストに依存しない
-- **データ初期化**: テスト前の確実なデータクリア
-- **実環境再現**: 本番環境に近い条件でのテスト
+# tsx実行でデータ再初期化
+tsx scripts/init-firebase-data.ts
+```
+
+#### 認証関連エラー
+
+```typescript
+// テスト用認証ヘッダーの確認
+const headers = {
+  'X-User-ID': 'test-user-1',
+  'Content-Type': 'application/json'
+};
+```
+
+#### タイムアウト対策
+
+```typescript
+// vitest.integration.config.ts
+export default defineConfig({
+  test: {
+    testTimeout: 30000, // Firebase Emulator起動考慮
+  }
+});
+```
+
+### デバッグ手法
+
+**詳細な環境確認は [DOCKER_TESTING.md](../DOCKER_TESTING.md) のトラブルシューティングセクションを参照してください。**
+
+## 🎯 開発ワークフローにおける統合テストの位置づけ
+
+### テスト戦略の全体像
+
+```mermaid
+graph LR
+    A[ユニットテスト] --> B[統合テスト] --> C[E2Eテスト] --> D[デプロイ]
+    A --> E[高速フィードバック<br/>個別コンポーネント]
+    B --> F[API・DB統合<br/>システム連携]
+    C --> G[UI・UX<br/>エンドユーザー視点]
+```
+
+### 品質保証プロセス
+
+1. **開発中**: ユニットテスト（MSWモック環境）で高速フィードバック
+2. **プルリクエスト**: 統合テスト（Firebase Emulator環境）でAPI検証
+3. **リリース前**: E2Eテスト（実ブラウザ環境）でUX検証
+4. **本番リリース**: 全テスト成功後の安全なデプロイ
 
 ### CI/CD統合
+
 ```yaml
-# GitHub Actions例
+# GitHub Actions での統合テスト実行例
 - name: Run Integration Tests
   run: npm run docker:test:run
+  timeout-minutes: 10
 ```
 
-### 開発ワークフロー
-1. **ユニットテスト**: ローカルで高速フィードバック
-2. **統合テスト**: Docker環境で実環境検証
-3. **デプロイ**: 全テスト成功後にリリース
+## 🔄 継続的改善
+
+### テストカバレッジの監視
+
+- **APIエンドポイント**: 全CRUD操作の網羅
+- **エラーハンドリング**: 異常系レスポンスの検証
+- **認証フロー**: 権限制御の適切性
+- **データ整合性**: Firestore操作の正確性
+
+### パフォーマンス監視
+
+- **レスポンス時間**: API呼び出しの性能監視
+- **テスト実行時間**: 13.03秒での安定実行維持
+- **リソース使用量**: Docker環境での効率的実行
 
 ## 📋 関連ドキュメント
 
-- [TEST_ENVIRONMENTS.md](TEST_ENVIRONMENTS.md) - テスト環境ガイドライン
-- [UT_TEST.md](UT_TEST.md) - ユニットテストガイド
-- [E2E_TEST.md](E2E_TEST.md) - E2Eテストガイド
-- [../DOCKER_TESTING.md](../DOCKER_TESTING.md) - Docker統合テスト環境
-- [../VITEST_INTEGRATION_CONFIG.md](../VITEST_INTEGRATION_CONFIG.md) - 統合テスト専用設定
+- **環境構築**: [DOCKER_TESTING.md](../DOCKER_TESTING.md) - Docker統合テスト環境の詳細
+- **テスト戦略**: [TEST_ENVIRONMENTS.md](TEST_ENVIRONMENTS.md) - 全体的なテスト環境ガイドライン  
+- **単体テスト**: [UT_TEST.md](UT_TEST.md) - ユニットテストガイド
+- **E2Eテスト**: [E2E_TEST.md](E2E_TEST.md) - エンドツーエンドテストガイド
 
 ---
 
-**💡 まとめ**: 統合テストにより、Firebase Emulator + Next.js の完全統合環境で実際のAPI通信を検証し、システム全体の品質を確保できます。
+**💡 まとめ**: 統合テストは、ユニットテストとE2Eテストの橋渡しとして、APIレベルでのシステム品質を保証し、安全で確実なソフトウェア開発を支援します。
