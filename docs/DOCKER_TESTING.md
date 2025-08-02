@@ -49,7 +49,9 @@ npm run docker:test
 # 🔧 http://localhost:4000 - Firebase Emulator UI (テスト用)
 ```
 
-**⚠️ 注意**: Firebase Emulatorは初回起動時にJavaランタイム、Firebase CLI、tsxのインストールが実行されるため、数分かかる場合があります。Docker環境では自動的にTypeScriptファイル（`scripts/init-firebase-data.ts`）を実行してテストデータを初期化します。
+**⚠️ 注意**: Firebase Emulator用カスタムDockerfile (`firebase-emulator.Dockerfile`) によりビルド時に依存関係を事前インストールするため、2回目以降の起動は大幅に高速化されます。初回のみ `docker-compose build` でのイメージビルドが必要です。Docker環境では自動的にTypeScriptファイル（`scripts/init-firebase-data.ts`）を実行してテストデータを初期化します。
+
+**🔒 セキュリティ**: 全ポートが `127.0.0.1` にバインドされ、localhostからのみアクセス可能に制限されています。
 
 ### ⚡ 3. Docker統合テストの実行
 

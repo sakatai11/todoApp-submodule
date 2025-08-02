@@ -45,6 +45,7 @@ todoApp-next/
 ├── docker-compose.test.yml     # テスト用Docker構成
 ├── Dockerfile                  # Next.jsアプリ用Dockerfile
 ├── Dockerfile.test             # E2Eテスト用Dockerfile
+├── firebase-emulator.Dockerfile # Firebase Emulator用カスタムDockerfile
 ├── firebase.json               # Firebase設定（開発用）
 ├── firebase.test.json          # Firebase設定（テスト用）
 ├── playwright.config.ts        # Playwright設定
