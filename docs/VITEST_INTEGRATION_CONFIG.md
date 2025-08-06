@@ -17,7 +17,17 @@ export default defineConfig({
     setupFiles: ['./tests/setup-integration.ts'],
     include: ['**/*integration*.{test,spec}.{js,ts,jsx,tsx}'],
     exclude: ['node_modules', 'dist', '.next'],
-    testTimeout: 30000, // 30秒のタイムアウト（Firebase Emulator接続用）
+    testTimeout: 60000, // 60秒のタイムアウト（Firebase Emulator接続用）
+    hookTimeout: 60000, // フックタイムアウトも60秒に設定
+    env: {
+      // Firebase Emulator用環境変数（Docker環境統一）
+      FIRESTORE_EMULATOR_HOST: 'firebase-emulator-test:8080',
+      FIREBASE_AUTH_EMULATOR_HOST: 'firebase-emulator-test:9099',
+      NEXT_PUBLIC_EMULATOR_MODE: 'true',
+      GCLOUD_PROJECT: 'todoapp-test',
+      FIREBASE_PROJECT_ID: 'todoapp-test',
+      NEXT_PUBLIC_APP_URL: 'http://nextjs-test:3000',
+    },
   },
   resolve: {
     alias: {
@@ -35,9 +45,10 @@ export default defineConfig({
 - **目的**: 統合テストファイルのみを実行
 
 #### 2. Firebase Emulator対応
-- **タイムアウト**: 30秒（通常の5倍）
+- **タイムアウト**: 60秒（通常の12倍、統合テスト実行時間約13秒を考慮）
 - **理由**: Firebase Emulator接続とNext.jsアプリ起動の待機時間を考慮
 - **環境**: Docker内でのサービス間通信に最適化
+- **実績**: 7テスト、約13秒で安定実行
 
 #### 3. 専用セットアップファイル
 - **ファイル**: `tests/setup-integration.ts`
@@ -86,9 +97,10 @@ integration-test:
 
 ### ネットワーク構成
 
-- **Firebase Emulator**: `firebase-emulator-test:8080/9099`
-- **Next.js App**: `nextjs-test:3000`
-- **統合テスト**: 上記2つのサービスに対してHTTPリクエストを送信
+- **Firebase Emulator**: `firebase-emulator-test:8080/9099`（内部通信）
+- **Firebase Emulator UI**: `localhost:4000`（外部アクセス）
+- **Next.js App**: `nextjs-test:3000`（内部通信）/ `localhost:3002`（外部アクセス）
+- **統合テスト**: 上記2つのサービスに対してHTTPリクエストを送信（Docker内部ネットワーク使用）
 
 ## トラブルシューティング
 
@@ -96,7 +108,7 @@ integration-test:
 
 1. **タイムアウトエラー**
    - **原因**: Firebase Emulator起動待機時間不足
-   - **解決**: `testTimeout: 30000`で十分な待機時間を確保
+   - **解決**: `testTimeout: 60000`（60秒）で十分な待機時間を確保
 
 2. **MSW競合エラー**
    - **原因**: ユニットテスト設定でMSWが有効
@@ -110,10 +122,10 @@ integration-test:
 
 ```bash
 # Firebase Emulator接続確認
-curl http://localhost:4001
+curl http://localhost:4000
 
-# Next.jsアプリ確認
-curl http://localhost:3001
+# Next.jsアプリ確認（テスト環境）
+curl http://localhost:3002
 
 # 統合テスト詳細ログ
 docker-compose -f docker-compose.test.yml logs integration-test

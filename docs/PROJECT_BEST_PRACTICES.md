@@ -2,7 +2,7 @@
 
 ## 概要
 
-Next.js Todoアプリケーションにおけるベストプラクティス、CI/CD設定、および品質管理について説明します。効率的な開発と安定したリリースを実現するためのガイドラインです。
+Next.js 15 + React 19ベースのTodoアプリケーションにおけるベストプラクティス、CI/CD設定、および品質管理について説明します。100%テストカバレッジと高品質なコードベースを維持するためのガイドラインです。
 
 ## 🎯 開発ベストプラクティス
 
@@ -27,7 +27,8 @@ Next.js Todoアプリケーションにおけるベストプラクティス、CI
 ### コード品質管理
 
 #### 型安全性の確保
-- **TypeScript strict mode**: 厳格な型チェック
+- **TypeScript 5.7.3**: 最新の型機能を活用した厳格な型チェック
+- **React 19対応**: 新機能に対応した型安全な実装
 - **ESLint準拠**: `@typescript-eslint/no-explicit-any` 規則の適用
 - **Zodバリデーション**: API リクエスト/レスポンスの型安全性
 
@@ -64,13 +65,13 @@ Next.js Todoアプリケーションにおけるベストプラクティス、CI
 ##### 開発環境
 
 - **UI開発・単体テスト**: ローカル + MSW (`npm run dev`)
-  - MSW（Mock Service Worker）でAPIリクエストをモック
+  - MSW 2.8.7（Mock Service Worker）でAPIリクエストをモック
   - 高速な開発サイクルとUIテストに最適
   - 環境変数: `NEXT_PUBLIC_API_MOCKING=enabled`
   - ポート: localhost:3000（App）
 
 - **統合開発・API検証**: Docker + MSW (`npm run docker:dev`)
-  - MSWでAPIモック（Firebase Emulatorも起動するが、MSWが優先）
+  - MSW 2.8.7でAPIモック（Firebase Emulatorも起動するが、MSWが優先）
   - 高速な開発サイクルとモックAPIによる開発効率化
   - ポート: localhost:3000（App）, localhost:4000（Emulator UI）
   - モックAPI表示: Mock Mode インジケーター付き
@@ -78,26 +79,27 @@ Next.js Todoアプリケーションにおけるベストプラクティス、CI
 ##### テスト環境
 
 - **ユニットテスト**: ローカル + MSW (`npm run test`)
-  - MSWでAPIモック、高速テスト実行
-  - 統合テスト除外で純粋なユニットテストのみ実行
+  - MSW 2.8.7でAPIモック、高速テスト実行
+  - 統合テスト除外で純粋なユニットテストのみ実行（24ファイル、413テスト）
   - 実行時間: 高速（秒単位）
 
 - **統合テスト**: Docker専用 (`npm run docker:test:run`)
   - Firebase Emulator + Next.js の完全統合環境
-  - API CRUD操作の実環境テスト（7テスト、13.03秒で安定実行）
-  - 統合テスト専用設定（`vitest.integration.config.ts`）でMSW無効化
-  - ポート: localhost:3001（App）, localhost:4001（Emulator UI）
+  - API CRUD操作の実環境テスト（7テスト、約13秒で安定実行）
+  - 統合テスト専用設定（`vitest.integration.config.ts`）でMSW無効化、60秒タイムアウト
+  - ポート: localhost:3002（App）, localhost:4000（Emulator UI）
 
 - **E2Eテスト**: Docker + Playwright (`npm run docker:e2e:run`)
-  - ブラウザ自動化による完全なユーザーフロー検証
+  - Playwright 1.54.1によるブラウザ自動化
   - Todo機能の包括的なE2Eテスト
   - 実際のブラウザ環境でのインタラクション検証
 
 **注意事項**:
-- **開発環境**: MSW有効でモック中心の高速開発
+- **開発環境**: MSW 2.8.7有効でモック中心の高速開発
 - **テスト環境**: MSW無効でFirebase Emulator専用の実環境テスト
-- 開発環境（3000番台）とテスト環境（3001番台）のポート完全分離
+- 開発環境（3000番台）とテスト環境（3002番台）のポート完全分離
 - テスト一貫性のため、同じテスト種別では統一データソースを使用
+- 統合テスト用設定ファイル（vitest.integration.config.ts）による環境分離
 
 ## 📊 CI/CD統合ベストプラクティス
 
@@ -174,11 +176,12 @@ jobs:
 ### 推奨開発手順
 
 #### 日常開発サイクル
-1. **機能開発**: ローカル環境で開発（`npm run docker:dev`）
-2. **ユニットテスト**: `npm run test` で基本動作確認
-3. **統合テスト**: `npm run docker:test:run` でAPI動作確認
-4. **E2Eテスト**: `npm run docker:e2e:run` で最終確認
-5. **コミット**: 全テスト成功後にコミット
+1. **機能開発**: ローカル環境（`npm run dev`）またはDocker環境（`npm run docker:dev`）で開発
+2. **ユニットテスト**: `npm run test` で基本動作確認（24ファイル、413テスト）
+3. **統合テスト**: `npm run docker:test:run` でAPI動作確認（7テスト）
+4. **E2Eテスト**: `npm run docker:e2e:run` で最終確認（Playwright 1.54.1）
+5. **コード品質**: `npm run format` でESLint 9.20.0 + Prettier 3.5.0実行
+6. **コミット**: 全テスト成功後にコミット
 
 #### プルリクエスト手順
 1. **ブランチ作成**: `feature/` または `fix/` プレフィックス
@@ -205,13 +208,14 @@ docs(readme): セットアップ手順を更新
 
 #### テストカバレッジ
 - **目標**: 100%カバレッジ維持
-- **現状**: 22ファイル、413テスト、全成功
+- **現状**: 24ファイル、413テスト、全成功
 - **監視**: CI/CDでのカバレッジ低下検知
 
 #### パフォーマンス指標
-- **統合テスト実行時間**: 3.51秒（高速実行を実現）
+- **統合テスト実行時間**: 約13秒（7テスト、Docker + Firebase Emulator環境）
+- **ユニットテスト実行時間**: 高速実行（秒単位、MSW環境）
 - **ビルド時間**: 最適化されたDocker layer利用
-- **E2Eテスト**: 効率的なテストシナリオ設計
+- **E2Eテスト**: 効率的なテストシナリオ設計（Playwright 1.54.1）
 
 ### セキュリティ
 

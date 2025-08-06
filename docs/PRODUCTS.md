@@ -23,16 +23,18 @@ TodoApp-Nextは、Next.jsをベースにしたタスク管理アプリケーシ�
 
 ## 使用技術
 
-- **フロントエンド**: Next.js React
-- **スタイリング**: Tailwind CSS
-- **UIコンポーネント**: Material UI (MUI)
-- **バックエンド**: Firebase Admin SDK (Authentication, Firestore)
-- **認証**: NextAuth.js
-- **データフェッチング**: SWR
-- **ドラッグ＆ドロップ**: @dnd-kit/core
-- **型定義**: TypeScript
-- **バリデーション**: Zod
-- **Lint/フォーマット**: ESLint, Prettier
+- **フレームワーク**: Next.js 15.2.4 (App Router + Turbopack)
+- **ランタイム**: React 19.0.0, React DOM 19.0.0
+- **言語**: TypeScript 5.7.3
+- **認証**: NextAuth.js 5.0.0-beta.25
+- **バックエンド**: Firebase Admin SDK 13.2.0 (Authentication, Firestore)
+- **UIライブラリ**: Material-UI (MUI) 6.4.3 + Tailwind CSS 3.4.17
+- **状態管理**: React Context + SWR 2.3.3
+- **ドラッグ＆ドロップ**: @dnd-kit/core 6.3.1
+- **バリデーション**: Zod 3.24.2
+- **テスト**: Vitest 2.1.8 + React Testing Library 14.3.1 + MSW 2.8.7 + Playwright 1.54.1
+- **開発ツール**: ESLint 9.20.0, Prettier 3.5.0
+- **Container**: Docker + Docker Compose (統合テスト・開発環境)
 - **デプロイ**: Vercel
 
 ## プロジェクト構造
@@ -45,7 +47,7 @@ todoApp-next/
 ├── docker-compose.test.yml     # テスト用Docker構成
 ├── Dockerfile                  # Next.jsアプリ用Dockerfile
 ├── Dockerfile.test             # E2Eテスト用Dockerfile
-├── firebase-emulator.Dockerfile # Firebase Emulator用カスタムDockerfile
+├── firebase-emulator.test.Dockerfile # Firebase Emulator用テスト専用Dockerfile
 ├── firebase.json               # Firebase設定（開発用）
 ├── firebase.test.json          # Firebase設定（テスト用）
 ├── playwright.config.ts        # Playwright設定
@@ -135,7 +137,7 @@ todoApp-next/
 │   ├── cleanup-db.ts           # テストデータベースクリーンアップ
 │   └── helpers/                # スクリプト用ヘルパー関数
 │       └── testDbDataFetcher.ts # テストデータ取得ユーティリティ
-├── tests/                      # テストファイルと設定（22ファイル、413テスト）
+├── tests/                      # テストファイルと設定（24ファイル、413テスト）
 │   ├── setup.ts                # グローバルテスト環境セットアップ（ユニットテスト用）
 │   ├── setup-integration.ts    # 統合テスト環境セットアップ
 │   ├── test-utils.tsx          # カスタムレンダー関数とユーティリティ
@@ -184,29 +186,33 @@ todoApp-next/
 ## 開発コマンド
 
 ```bash
-# 開発
-npm run dev              # Turbopackで開発サーバーを起動
-npm run build           # クリーンビルド（.nextディレクトリ削除＋ビルド）
-npm start               # 本番サーバーを起動
+# 開発サーバー（ローカル）
+npm run dev              # Turbopackで開発サーバーを起動 (localhost:3000)
+npm run build           # プロダクションビルド（.nextディレクトリクリア+ビルド）
+npm run start           # プロダクションサーバーを起動
 
-# コード品質
-npm run lint            # ESLintを自動修正で実行
-npm run prettier        # Prettierでコードをフォーマット
+# Docker開発環境
+npm run docker:dev       # Docker開発環境起動（MSW + Firebase Emulator）
+npm run docker:dev:down  # Docker開発環境停止
+
+# コード品質・フォーマット
+npm run lint            # ESLint 9.20.0を自動修正で実行
+npm run prettier        # Prettier 3.5.0でコードをフォーマット
 npm run format          # prettierとlintの両方を実行
 
-# テスト・モック
-npm run test            # Vitestでテスト実行
-npm run test:coverage   # カバレッジ付きテスト実行
+# ユニットテスト（MSW使用）
+npm run test            # Vitest 2.1.8でユニットテスト実行
+npm run test:coverage   # カバレッジ付きテスト実行（100%達成済み）
 npm run test:ui         # Vitest UIモードでテスト実行
-npm run msw:init        # Mock Service Workerを初期化
+npm run msw:init        # Mock Service Worker 2.8.7を初期化
 
-# Docker環境テスト
-npm run docker:test     # Firebase Emulator環境を起動
-npm run docker:test:run # 統合テスト実行（Firebase Emulator + tsx）
-npm run docker:test:down # Docker環境停止
-npm run docker:e2e:run  # E2Eテスト実行
+# Docker統合テスト（Firebase Emulator使用）
+npm run docker:test     # Firebase Emulator環境を起動（ポート4000/8080/9099）
+npm run docker:test:run # 統合テスト実行（Docker + tsx環境、7テスト）
+npm run docker:test:down # Docker環境完全停止
+npm run docker:e2e:run  # E2Eテスト実行（Playwright 1.54.1）
 
-# Firebase Emulator
+# Firebase Emulator（ローカル開発用）
 npm run emulator:start  # 開発用Firebase Emulator起動
 npm run emulator:test   # テスト用Firebase Emulator起動
 ```
@@ -233,16 +239,20 @@ npm run emulator:test   # テスト用Firebase Emulator起動
 
 ## テスト戦略
 
-- **フレームワーク**: Vitest + React Testing Library + MSW
-- **カバレッジ**: 100%達成済み
-- **モック**: MSWによるAPIモックとテストデータ管理
-- **テスト構造**: フィーチャーベースのテスト組織化
-- **統合テスト**: Docker + Firebase Emulator + tsx実行環境
-- **テストデータ**: ユーザー分離型テストデータ（export_test_data.ts）
+- **フレームワーク**: Vitest 2.1.8 + React Testing Library 14.3.1 + MSW 2.8.7
+- **カバレッジ**: 100%達成済み（24ファイル、413テスト）
+- **ユニットテスト**: MSWによるAPIモック、高速実行（秒単位）
+- **統合テスト**: Docker + Firebase Emulator環境、7テスト実行
+- **E2Eテスト**: Playwright 1.54.1による完全なユーザーフロー検証
+- **テスト構造**: フィーチャーベースの組織化（features/テスト構造に対応）
+- **テストデータ**: ユーザー分離型データ（export_test_data.ts）とサブモジュール統一データ
 
 ### Docker統合テスト環境
 
-- **Firebase Emulator**: Firestore + Auth + UI（ポート分離）
+- **Firebase Emulator**: Firestore + Auth + UI（ポート4000/8080/9099）
+- **Next.jsアプリ**: ポート3002（テスト専用、開発環境と分離）
 - **TypeScript実行**: tsx によるリアルタイムトランスパイル
 - **データ初期化**: init-firebase-data.ts による自動テストデータ投入
-- **ユーザー分離**: test-user-1 / test-admin-1 の個別データ構造
+- **ユーザー分離**: test-user-1（一般） / test-admin-1（管理者）の個別データ構造
+- **設定分離**: vitest.integration.config.ts による統合テスト専用設定（60秒タイムアウト）
+- **環境変数**: Firebase Emulator接続とMSW無効化の自動設定
