@@ -14,8 +14,8 @@ Next.js TodoアプリケーションでDocker を使用してFirebase Emulator�
 | ------------------------ | ---------------- |
 | **Next.jsアプリ**        | `localhost:3002` |
 | **Firebase Emulator UI** | `localhost:4000` |
-| **Firestore Emulator**   | `localhost:8090` |
-| **Auth Emulator**        | `localhost:9100` |
+| **Firestore Emulator**   | `localhost:8080` |
+| **Auth Emulator**        | `localhost:9099` |
 
 #### 🔧 構成要素
 
@@ -63,7 +63,7 @@ npm run docker:test:run
 
 ```
 
-**技術詳細**: Docker環境では統合テスト専用設定（`vitest.integration.config.ts`）によりMSW（Mock Service Worker）が自動的に無効化され、Firebase Emulatorとの直接通信を実現。tsx実行環境により`scripts/init-firebase-data.ts`で自動的にユーザー分離テストデータを初期化し、Next.jsアプリ + Firebase Emulator + 統合テストの完全連携環境でテストを実行。
+**技術詳細**: Docker環境では統合テスト専用設定（`vitest.integration.config.ts`）によりMSW（Mock Service Worker）が自動的に無効化され、Firebase Emulatorとの直接通信を実現。tsx実行環境により`scripts/init-firebase-data.ts`で自動的にユーザー分離テストデータを初期化し、Next.jsアプリ + Firebase Emulator + 統合テストの完全連携環境でテストを実行。**データ管理**: テスト実行毎にクリーンなデータで開始し、テスト終了時に完全リセット。
 
 ### 🧹 4. テスト環境の停止
 
@@ -83,7 +83,9 @@ npm run docker:test:down
 | `docker-compose.test.yml` | テスト環境のポート設定 |
 | `firebase.test.json`      | Emulatorのポート設定   |
 
-### 🗄️ テストデータの設定
+### 🗄️ テストデータの管理と永続化
+
+#### テストデータの構造と管理
 
 テストデータは以下のファイルで管理されます：
 
@@ -92,7 +94,31 @@ npm run docker:test:down
 - **ユーザー分離**: `test-user-1` / `test-admin-1` による個別データ構造
 - **データクリーンアップ**: `scripts/cleanup-db.ts` で必要時に実行
 
-## 🐛 トラブルシューティング
+#### テスト環境でのデータ永続化
+
+**重要**: テスト環境は開発環境と異なり、データの永続化は一時的です。
+
+- **Docker Volume**: ワークスペースは永続化されるが、Emulatorデータは停止時にリセット
+- **データ初期化**: テスト実行前に毎回クリーンな状態でスタート
+- **テスト用データ**: `USE_TEST_DB_DATA=true` でテスト専用データを使用
+- **ユーザー分離データ**: 各テストユーザーが独立したデータを持つ
+
+#### データライフサイクル（テスト環境）
+
+1. **テスト環境起動**: Firebase Emulatorがクリーン状態で起動
+2. **データ初期化**: `scripts/init-firebase-data.ts` が自動実行され、テスト用データを投入
+3. **テスト実行**: 各統合テストが独立したデータセットで実行
+4. **テスト完了**: テスト結果の収集後、コンテナ停止
+5. **データクリア**: 停止時にEmulatorデータは完全にリセット
+
+#### テストデータの特徴
+
+- **一貫性**: 毎回同じ初期データでテスト開始
+- **分離性**: ユーザー別の独立したデータ構造
+- **信頼性**: テスト間でのデータ汚染を防止
+- **再現性**: 同じ条件でのテスト繰り返しが可能
+
+## 🐛 トラブルシューティングとデータ問題解決
 
 ### Firebase Emulatorが起動しない
 
@@ -116,7 +142,7 @@ npm install -g firebase-tools
 
 ```bash
 # 使用中のポートを確認
-lsof -ti:8090,9100,4000,3002
+lsof -ti:8080,9099,4000,3002
 
 # プロセスの終了
 kill -9 <PID>
@@ -149,6 +175,47 @@ tsx scripts/init-firebase-data.ts
 tsx scripts/cleanup-db.ts
 ```
 
+### テストデータの問題
+
+```bash
+# テストデータの状態確認
+# Emulator UI (localhost:4000) でFirestoreデータを目視確認
+
+# テスト用ユーザーデータの確認
+curl "http://localhost:9099/identitytoolkit.googleapis.com/v1/projects/todoapp-test/accounts" \
+  -H "Authorization: Bearer owner"
+
+# Firestoreテストデータの確認
+curl "http://localhost:8080/v1/projects/todoapp-test/databases/(default)/documents" \
+  -H "Authorization: Bearer owner"
+
+# データ初期化スクリプトの手動実行
+docker-compose -f docker-compose.test.yml exec firebase-emulator-test \
+  tsx scripts/init-firebase-data.ts
+
+# テスト環境の完全リセット
+npm run docker:test:down
+docker volume prune -f  # 全テストデータ削除
+npm run docker:test:run  # クリーンデータで再実行
+```
+
+### データ永続化に関する問題
+
+```bash
+# Docker Volumeの確認
+docker volume ls | grep todoapp
+docker volume inspect <volume_name>
+
+# テストデータの意図しない永続化確認
+# テスト環境ではデータは一時的であるべき
+docker-compose -f docker-compose.test.yml logs firebase-emulator-test | grep -i export
+
+# テストデータの完全クリア
+rm -rf firebase-emulator-data  # テスト用データキャッシュ削除
+docker-compose -f docker-compose.test.yml down --volumes --remove-orphans
+docker system prune -f
+```
+
 ## 📊 CI/CD統合
 
 GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
@@ -158,6 +225,68 @@ GitHub ActionsなどのCI/CD環境で統合テストを実行する場合：
 - name: Run Docker Integration Tests
   run: |
     npm run docker:test:run
+```
+
+## 🔄 テスト環境の特徴とデータ管理戦略
+
+### 🎯 テストデータ管理の基本原則
+
+#### 開発環境との違い
+
+| 項目             | 開発環境                             | テスト環境                 |
+| ---------------- | ------------------------------------ | -------------------------- |
+| **データ永続化** | 部分的永続化                         | 一時的（テスト毎リセット） |
+| **初期データ**   | 1回目のみ自動ロード                  | 毎回自動ロード             |
+| **データ復元**   | 停止時エクスポート・起動時インポート | 毎回クリーン状態           |
+| **データ目的**   | 開発作業用                           | テスト検証用               |
+| **ポート番号**   | 3000/4000/8080/9099                  | 3002/4000/8080/9099        |
+
+#### テストデータ管理の利点
+
+- **一貫性保証**: 毎回同じ初期状態からテスト開始
+- **テスト間独立性**: 各テストが他のテストに影響しない
+- **データ汚染防止**: テスト実行後のデータが次回に影響しない
+- **デバッグ容易性**: 予測可能なデータ状態でデバッグ可能
+
+### テストワークフローとデータサイクル
+
+#### 統合テストの実行サイクル
+
+1. **環境初期化** (0-10秒)
+   - Firebase Emulator起動（クリーン状態）
+   - Next.jsアプリ起動（テストポート3002）
+   - サービス間の連携確認
+
+2. **データ初期化** (10-15秒)
+   - `scripts/init-firebase-data.ts` 自動実行
+   - ユーザー分離テストデータ投入
+   - Firestoreサブコレクション構造構築
+
+3. **テスト実行** (15-30秒)
+   - 7テストの統合テスト実行
+   - Todo/Lists APIのCRUD操作検証
+   - ユーザー権限・認証テスト
+
+4. **結果収集・クリーンアップ** (30-35秒)
+   - テスト結果の収集とレポート
+   - コンテナ停止とデータクリア
+   - 次回テストのためのリセット
+
+#### テストデータのベストプラクティス
+
+```bash
+# 高速テスト実行（推奨）
+npm run docker:test:run  # 全環境自動構築+テスト
+
+# 手動デバッグ用（開発時）
+npm run docker:test      # 環境のみ起動
+# → localhost:4000 でEmulator UI確認
+# → localhost:3002 でNext.jsアプリ確認
+
+# 問題がある場合のリセット
+npm run docker:test:down
+docker system prune -f   # 完全クリーンアップ
+npm run docker:test:run  # クリーン環境で再実行
 ```
 
 ## 🔄 最新の変更内容（2025年実装）
