@@ -8,7 +8,7 @@ let lists = [...mockLists];
 export const listsHandlers = [
   // Get all lists
   http.get('/api/lists', () => {
-    return HttpResponse.json(lists);
+    return HttpResponse.json({ lists });
   }),
 
   // Create new list

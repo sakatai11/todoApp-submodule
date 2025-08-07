@@ -8,7 +8,7 @@ let todos = [...mockTodos];
 export const todosHandlers = [
   // GET todos
   http.get('/api/todos', () => {
-    return HttpResponse.json(todos);
+    return HttpResponse.json({ todos });
   }),
 
   // POST todo
