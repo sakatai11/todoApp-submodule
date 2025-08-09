@@ -48,7 +48,7 @@ interface TodoErrorBoundaryProps {
 
 - **URL**: `/api/todos` と `/api/lists`
 - **メソッド**: GET
-- **認証**: 
+- **認証**:
   - **本番環境**: セッション情報（`credentials: 'include'`）
   - **開発・テスト環境**: `X-User-ID`ヘッダー + セッション情報
 
@@ -70,12 +70,16 @@ const headers: HeadersInit = {
 };
 
 // エミュレーターモード時はX-User-IDヘッダーを追加
-if (process.env.NEXT_PUBLIC_EMULATOR_MODE === 'true') {
+if (
+  process.env.NEXT_PUBLIC_EMULATOR_MODE === 'true' &&
+  process.env.NODE_ENV !== 'production'
+) {
   headers['X-User-ID'] = process.env.NEXT_PUBLIC_TEST_USER_UID || 'test-user-1';
 }
 ```
 
 **環境変数設定**:
+
 - **開発環境**: `NEXT_PUBLIC_TEST_USER_UID=dev-user-1`
 - **テスト環境**: `NEXT_PUBLIC_TEST_USER_UID=test-user-1`
 - **本番環境**: 環境変数なし（NextAuth.js認証）
@@ -119,6 +123,7 @@ type ListDataProps = {
 ## 5.1. useSWR使用パターン
 
 ### 基本的な使用方法
+
 ```typescript
 // TodoWrapper.tsx - 初期データ取得のみ
 const { data, error, isLoading } = useSWR<DataProps>(
@@ -149,6 +154,7 @@ const { todos, lists } = contents;
 ```
 
 ### 使用箇所と役割
+
 - **使用箇所**: TodoWrapperコンポーネントでの初期データ取得のみ
 - **役割**: サーバーからのTodo・リストデータ取得とContext初期化
 - **制約**: 初期データ取得後は、useSWRではなくuseStateベースの状態管理を使用
