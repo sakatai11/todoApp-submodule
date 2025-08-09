@@ -27,7 +27,31 @@ handler: (uid: string, body: T) => Promise<NextResponse<R>>  // 処理関数
 Promise<NextResponse<R>>
 ```
 
-## 3. 処理フロー
+## 3. 環境別認証処理
+
+### 認証方法の切り替え
+
+```typescript
+// テスト環境・開発環境では X-User-ID ヘッダーから認証情報を取得
+if (
+  process.env.NODE_ENV === 'test' ||
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_EMULATOR_MODE === 'true'
+) {
+  uid = req.headers.get('X-User-ID') || undefined;
+} else {
+  // 本番環境では通常のセッション認証
+  const session = await auth();
+  uid = session?.user?.id;
+}
+```
+
+### 環境別設定
+
+- **テスト・開発・Emulator環境**: `X-User-ID`ヘッダーから認証
+- **本番環境**: NextAuth.jsセッションから認証
+
+## 4. 処理フロー
 
 ### 1. 認証チェック
 - `auth()`でセッション情報を取得

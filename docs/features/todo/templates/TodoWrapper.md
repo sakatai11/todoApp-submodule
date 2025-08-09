@@ -16,7 +16,7 @@
 
 ### 設定要素
 
-- `fetcher`: SWR用のデータ取得関数
+- `fetcher`: SWR用のデータ取得関数（環境別認証ヘッダー設定含む）
 - `apiUrl`: 環境別API URLの動的構築
 - `preload`: クライアント事前読み込み設定
 
@@ -46,9 +46,11 @@ interface TodoErrorBoundaryProps {
 
 ### API エンドポイント
 
-- **URL**: `/api/dashboards`
+- **URL**: `/api/todos` と `/api/lists`
 - **メソッド**: GET
-- **認証**: セッション情報（`credentials: 'include'`）
+- **認証**: 
+  - **本番環境**: セッション情報（`credentials: 'include'`）
+  - **開発・テスト環境**: `X-User-ID`ヘッダー + セッション情報
 
 ### 環境別URL構築
 
@@ -59,14 +61,35 @@ const baseUrl =
     : ''; // クライアント環境（相対パス）
 ```
 
+### 環境別認証設定
+
+```typescript
+// fetcher関数内での環境別認証ヘッダー設定
+const headers: HeadersInit = {
+  'Content-Type': 'application/json',
+};
+
+// エミュレーターモード時はX-User-IDヘッダーを追加
+if (process.env.NEXT_PUBLIC_EMULATOR_MODE === 'true') {
+  headers['X-User-ID'] = process.env.NEXT_PUBLIC_TEST_USER_UID || 'test-user-1';
+}
+```
+
+**環境変数設定**:
+- **開発環境**: `NEXT_PUBLIC_TEST_USER_UID=dev-user-1`
+- **テスト環境**: `NEXT_PUBLIC_TEST_USER_UID=test-user-1`
+- **本番環境**: 環境変数なし（NextAuth.js認証）
+
 ### レスポンス型
 
 ```typescript
-type DataProps = {
-  contents: {
-    todos: TodoListProps[];
-    lists: StatusListProps[];
-  };
+// 個別エンドポイント型
+type TodoDataProps = {
+  todos: TodoListProps[];
+};
+
+type ListDataProps = {
+  lists: StatusListProps[];
 };
 ```
 
