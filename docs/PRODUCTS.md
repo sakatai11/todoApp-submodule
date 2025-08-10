@@ -99,6 +99,9 @@ todoApp-next/
 │   │   │   └── server-login/   # サーバーサイドログインAPI
 │   │   │       └── route.ts
 │   ├── libs/                   # 共通ライブラリ
+│   ├── providers/              # React プロバイダーコンポーネント
+│   │   ├── MSWProvider.tsx     # Mock Service Worker プロバイダー（開発環境用）
+│   │   └── SessionProvider.tsx # NextAuth.js セッションプロバイダー
 │   ├── static/                 # 静的CSSファイル
 │   │   ├── input.css
 │   │   └── output.css
@@ -229,6 +232,9 @@ npm run emulator:test   # テスト用Firebase Emulator起動
 - サーバーサイドトークン検証用のFirebase Admin SDK
 - `/api/auth/server-login`経由でのカスタムトークン交換
 - ロールベースアクセス制御（admin/userロール）
+- **SessionProvider統合**: `app/layout.tsx`でアプリ全体の認証状態管理
+- **環境別認証**: 開発環境（X-User-ID）と本番環境（NextAuth.js）の自動切り替え
+- **セキュリティ強化**: customToken等の機密情報をセッションから除外
 
 ## データ管理
 

@@ -47,9 +47,15 @@
 ### session Callback
 **役割**: セッションデータの公開制御
 
-**公開データ**:
-- user: id, email, customToken, role
-- tokenExpiry, tokenIssuedAt
+**公開データ** (セキュリティ向上版):
+- user: id, email, role
+- ~~customToken~~: セキュリティ向上のため除外
+- ~~tokenExpiry, tokenIssuedAt~~: 機密情報のため除外
+
+**セキュリティ改善**:
+- customTokenはJWTトークン内でのみ管理
+- フロントエンドに機密情報を送信せず
+- 必要最小限のセッション情報のみ公開
 
 ## 4. トークンリフレッシュ機能
 
@@ -74,8 +80,33 @@
 - 適切な認可チェック（ADMIN権限）
 - トークンの自動リフレッシュ
 - セッション有効期限の管理
+- **セッション情報の機密化**: customToken等をフロントエンドから除外
+- **最小権限原則**: 必要最小限のセッション情報のみ公開
 
-## 7. 環境変数
+## 7. SessionProvider統合
+
+### プロバイダー設定
+```typescript
+// app/layout.tsx
+<SessionProvider>
+  <MSWProvider>
+    {children}
+  </MSWProvider>
+</SessionProvider>
+```
+
+### useSession対応
+- TodoWrapperコンポーネントでuseSessionを使用
+- 本番環境での確実な認証状態確認
+- 認証確立後のデータ取得による信頼性向上
+
+### セッション管理フロー
+1. **開発環境**: X-User-IDヘッダー認証（従来通り）
+2. **本番環境**: NextAuth.jsセッション認証（useSession活用）
+3. **統一管理**: SessionProviderによる全体管理
+
+## 8. 環境変数
 
 - `NEXTAUTH_SECRET`: JWT署名用シークレット
 - `NEXTAUTH_URL`: リフレッシュAPI用ベースURL
+- `NEXT_PUBLIC_EMULATOR_MODE`: 開発環境判定（認証方式切り替え）
