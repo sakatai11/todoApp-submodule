@@ -76,7 +76,7 @@ todoApp-submodule/
 - **[DOCKER_TESTING.md](docs/DOCKER_TESTING.md)**: Docker統合テスト環境ガイド
 - **[VITEST_INTEGRATION_CONFIG.md](docs/VITEST_INTEGRATION_CONFIG.md)**: Vitest統合テスト設定詳細
 
-### 🧪 テスト戦略（100%カバレッジ達成）
+### 🧪 テスト戦略
 
 - **[tests/UT_TEST.md](docs/tests/UT_TEST.md)**: ユニットテスト（Vitest 2.1.8 + React Testing Library 14.3.1）
 - **[tests/IT_TEST.md](docs/tests/IT_TEST.md)**: 統合テスト（Docker + Firebase Emulator）
