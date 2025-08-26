@@ -116,7 +116,17 @@ type ListDataProps = {
   revalidateOnFocus: false,     // フォーカス時の再検証無効
   revalidateOnReconnect: false, // 再接続時の再検証無効
   suspense: false,              // ローカルではSuspense無効
-  shouldRetryOnError: false     // エラー時の自動リトライ無効
+  shouldRetryOnError: (err: Error) => {
+    // FetchErrorの場合はステータスコードでチェック
+    if (isFetchError(err)) {
+      // 401 (Unauthorized) または 403 (Forbidden) の場合はリトライしない
+      return err.status !== 401 && err.status !== 403;
+    }
+    // その他のエラーはリトライしない（ネットワークエラー等）
+    return false;
+  },
+  errorRetryCount: 3,           // リトライ回数上限
+  errorRetryInterval: 1000      // リトライ間隔（ミリ秒）
 }
 ```
 
@@ -159,7 +169,71 @@ const { todos, lists } = contents;
 - **役割**: サーバーからのTodo・リストデータ取得とContext初期化
 - **制約**: 初期データ取得後は、useSWRではなくuseStateベースの状態管理を使用
 
-## 6. エラーハンドリング
+## 6. セッション管理とエラーハンドリング
+
+### セッション同期処理
+
+#### 認証状態判定フロー
+
+1. **エミュレーターモード**: 開発・テスト環境では認証をスキップ
+2. **ローディング状態**: `status === 'loading'`の間はローディング画面表示
+3. **未認証状態**: `status === 'unauthenticated'`の場合の待機処理
+4. **認証完了状態**: `status === 'authenticated'`での正常処理
+
+#### セッション待機ロジック（サインイン後の同期遅延対応）
+
+```typescript
+const [sessionGraceOver, setSessionGraceOver] = useState(false);
+
+// セッション待機の設定
+useEffect(() => {
+  if (emulatorMode || typeof window === 'undefined') return;
+
+  if (status === 'unauthenticated') {
+    // unauthenticated状態になった時点で短時間の待機開始
+    const timer = setTimeout(() => {
+      setSessionGraceOver(true);
+    }, 2000); // 2秒の猶予期間
+
+    return () => clearTimeout(timer);
+  } else {
+    // 認証完了 or その他の状態に遷移したら待機状態をリセット
+    setSessionGraceOver(false);
+  }
+}, [emulatorMode, status]);
+```
+
+**目的**: サインイン成功直後のセッション同期遅延によるページリロード問題を回避
+
+**動作仕様**:
+- `unauthenticated`状態になってから2秒間は待機（ローディング画面表示）
+- 2秒経過後も`unauthenticated`なら認証エラー表示
+- 待機中に`authenticated`に変化すれば正常処理を継続
+
+#### 認証チェックの段階的処理
+
+```typescript
+// 1. 認証中の場合はローディング表示
+if (!emulatorMode && status === 'loading') return <TodosLoading />;
+
+// 2. 本番環境で未認証の場合は認証ページへリダイレクト
+// セッション同期の待機フラグを設ける
+if (!emulatorMode && status === 'unauthenticated') {
+  if (typeof window !== 'undefined' && !sessionGraceOver) {
+    return <TodosLoading />; // 待機期間中はローディング継続
+  }
+  return (
+    <ErrorDisplay message="認証されていません。ログインしてください。" />
+  );
+}
+
+// 3. セッションはあるがcustomTokenがない場合（認証が不完全）
+if (!emulatorMode && status === 'authenticated' && !session?.user?.id) {
+  return (
+    <ErrorDisplay message="認証情報が不完全です。再ログインしてください。" />
+  );
+}
+```
 
 ### 3層エラーハンドリング
 
