@@ -180,7 +180,7 @@ const { todos, lists } = contents;
 3. **未認証状態**: `status === 'unauthenticated'`の場合の待機処理
 4. **認証完了状態**: `status === 'authenticated'`での正常処理
 
-#### セッション待機ロジック（サインイン後の同期遅延対応）
+#### セッション同期ロジック（サインイン後の即座同期対応）
 
 ```typescript
 const [sessionGraceOver, setSessionGraceOver] = useState(false);
@@ -190,25 +190,31 @@ useEffect(() => {
   if (emulatorMode || typeof window === 'undefined') return;
 
   if (status === 'unauthenticated') {
-    // unauthenticated状態になった時点で短時間の待機開始
-    const timer = setTimeout(() => {
-      setSessionGraceOver(true);
-    }, 2000); // 2秒の猶予期間
-
-    return () => clearTimeout(timer);
+    // unauthenticated状態になったら即座にセッション更新を試行
+    const updateSession = async () => {
+      try {
+        await update();
+      } catch {
+        // セッション更新失敗時はエラー表示へ
+        setSessionGraceOver(true);
+      }
+    };
+    
+    updateSession();
   } else {
     // 認証完了 or その他の状態に遷移したら待機状態をリセット
     setSessionGraceOver(false);
   }
-}, [emulatorMode, status]);
+}, [emulatorMode, status, update]);
 ```
 
 **目的**: サインイン成功直後のセッション同期遅延によるページリロード問題を回避
 
 **動作仕様**:
-- `unauthenticated`状態になってから2秒間は待機（ローディング画面表示）
-- 2秒経過後も`unauthenticated`なら認証エラー表示
-- 待機中に`authenticated`に変化すれば正常処理を継続
+- `unauthenticated`状態になったら即座にNextAuth.jsの`update()`を実行
+- セッション更新成功時は自動的に`authenticated`状態に遷移
+- セッション更新失敗時のみ認証エラー表示
+- 不要な待機時間を削除し、レスポンシブなユーザー体験を実現
 
 #### 認証チェックの段階的処理
 
@@ -216,11 +222,11 @@ useEffect(() => {
 // 1. 認証中の場合はローディング表示
 if (!emulatorMode && status === 'loading') return <TodosLoading />;
 
-// 2. 本番環境で未認証の場合は認証ページへリダイレクト
-// セッション同期の待機フラグを設ける
+// 2. 本番環境で未認証の場合の処理
+// セッション更新を試行し、失敗時のみエラー表示
 if (!emulatorMode && status === 'unauthenticated') {
   if (typeof window !== 'undefined' && !sessionGraceOver) {
-    return <TodosLoading />; // 待機期間中はローディング継続
+    return <TodosLoading />; // セッション更新処理中はローディング継続
   }
   return (
     <ErrorDisplay message="認証されていません。ログインしてください。" />
